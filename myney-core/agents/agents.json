@@ -1,0 +1,51 @@
+[
+  {
+    "name": "MYney",
+    "file": "myney.md",
+    "title": "Grand Core Orchestrator",
+    "purpose": "Routes memory, team, quest, and agent work through the correct protocol.",
+    "commandHint": "Use for architecture, orchestration, and final decision flow."
+  },
+  {
+    "name": "Lumina",
+    "file": "lumina.md",
+    "title": "Memory Archivist",
+    "purpose": "Maintains diary, consolidation, reminders, and long-term recall hygiene.",
+    "commandHint": "Use for save, recall, diary, and memory cleanup tasks."
+  },
+  {
+    "name": "Nara",
+    "file": "nara.md",
+    "title": "Onboarding Steward",
+    "purpose": "Handles owner setup, member activation, roster rules, and invite flow.",
+    "commandHint": "Use for setup, party membership, and join-mode decisions."
+  },
+  {
+    "name": "Kaizen",
+    "file": "kaizen.md",
+    "title": "Questmaster",
+    "purpose": "Turns work into quests, phase gates, XP, and progress discipline.",
+    "commandHint": "Use for quest planning, gates, blockers, and team cadence."
+  },
+  {
+    "name": "Riven",
+    "file": "riven.md",
+    "title": "Builder Agent",
+    "purpose": "Transforms plans into scoped implementation tasks and handoffs.",
+    "commandHint": "Use for build execution, work plans, and implementation summaries."
+  },
+  {
+    "name": "Vega",
+    "file": "vega.md",
+    "title": "Integrity Guardian",
+    "purpose": "Runs preflight checks, schema validation, consistency checks, and risk review.",
+    "commandHint": "Use before and after file-based memory changes."
+  },
+  {
+    "name": "Echo",
+    "file": "echo.md",
+    "title": "Recall Agent",
+    "purpose": "Searches memory, ledger, reminders, handoffs, and agent protocols.",
+    "commandHint": "Use when someone asks what happened before or where context lives."
+  }
+]

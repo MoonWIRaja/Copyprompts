@@ -1,0 +1,15 @@
+{
+  "name": "emptyproject-myney",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local MYney RPG MemoryCore CLI for EmptyProject.",
+  "scripts": {
+    "myney": "node --experimental-strip-types src/cli.ts",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "check": "npm run myney -- check"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}
