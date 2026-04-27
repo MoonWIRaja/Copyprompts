@@ -1,10 +1,22 @@
-# EmptyProject: MYney RPG MemoryCore
+# .myney.core: Portable MYney RPG MemoryCore
 
-EmptyProject is a local, file-based RPG MemoryCore powered by MYney.
+`.myney.core` is a portable, local, file-based RPG MemoryCore powered by MYney.
 It stores identity, team state, quests, pair work, handoffs, reminders, and
-agent protocols in one human-readable Markdown file: `myney-core/MYNEY.md`.
+agent protocols in one human-readable Markdown file: `MYNEY.md`.
 
 No backend. No database. No external runtime dependency.
+
+## Install Into Any Project
+
+Copy this folder into any repo:
+
+```text
+your-project/
+└── .myney.core/
+```
+
+Then tell the AI: "Read `.myney.core/AGENTS.md`", or open this folder directly
+and type `/myney-setup`.
 
 ## Quick Start
 
@@ -14,11 +26,11 @@ Open this project in any AI-assisted IDE or chat with file access, then type:
 /myney-setup
 ```
 
-The AI reads `AGENTS.md`, loads `myney-core/MYNEY.md`, and follows the setup
+The AI reads `AGENTS.md`, loads `MYNEY.md`, and follows the setup
 flow. The first setup creates the owner. MYney asks whether this is a solo
 project or a team project. In team mode, choose one join model:
 
-- `owner-approved`: owner maintains the `approvedMembers` list inside `myney-core/MYNEY.md`.
+- `owner-approved`: owner maintains the `approvedMembers` list inside `MYNEY.md`.
 - `open`: any valid codename can join by running `/myney-setup`.
 - `invite`: owner creates invite codes with `/myney-invite`.
 
@@ -38,7 +50,7 @@ join mode.
 - `/myney-agent` - list or inspect local subagent protocols.
 - `/myney-check` - validate MemoryCore files and consistency.
 
-All command specs and live memory state live in `myney-core/MYNEY.md`.
+All command specs and live memory state live in `MYNEY.md`.
 
 ## Optional CLI Mirror
 
@@ -46,6 +58,7 @@ The slash commands are the primary interface. A local TypeScript CLI still exist
 for automation and testing:
 
 ```bash
+cd .myney.core
 npm run myney -- command list
 npm run myney -- setup
 npm run myney -- party
@@ -54,8 +67,15 @@ npm run myney -- party
 ## Memory Map
 
 ```text
-myney-core/
-└── MYNEY.md
+.myney.core/
+├── MYNEY.md
+├── AGENTS.md
+├── README.md
+├── setup.md
+├── package.json
+├── tsconfig.json
+├── src/
+└── tests/
 ```
 
 `MYNEY.md` contains the human protocol sections plus one `json myney-state`
@@ -65,6 +85,7 @@ agents, and commands.
 ## Development
 
 ```bash
+cd .myney.core
 npm test
 ```
 

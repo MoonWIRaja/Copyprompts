@@ -19,7 +19,7 @@ function run(cwd: string, args: string[]) {
 }
 
 function state<T>(root: string): T {
-  const content = readFileSync(join(root, "myney-core/MYNEY.md"), "utf8");
+  const content = readFileSync(join(root, "MYNEY.md"), "utf8");
   const match = content.match(/```json myney-state\n([\s\S]*?)\n```/);
   assert.ok(match, "MYNEY.md should contain myney-state JSON");
   return JSON.parse(match[1]) as T;

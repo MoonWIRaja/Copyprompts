@@ -1,14 +1,14 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
-export const CORE_DIR = "myney-core";
+export const CORE_DIR = ".";
 
 export function pathOf(root: string, ...parts: string[]): string {
   return join(root, ...parts);
 }
 
 export function corePath(root: string, ...parts: string[]): string {
-  return join(root, CORE_DIR, ...parts);
+  return join(root, ...parts);
 }
 
 export function exists(path: string): boolean {
@@ -72,4 +72,3 @@ export function timestamp(now = new Date()): string {
 export function today(): string {
   return timestamp().slice(0, 10);
 }
-

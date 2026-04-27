@@ -11,7 +11,7 @@ Type this in the AI chat while the project is open:
 ```
 
 The AI should read `AGENTS.md`, then execute the protocol in
-`myney-core/MYNEY.md`.
+`MYNEY.md`.
 
 ## First Run
 
@@ -51,7 +51,7 @@ MYney detects the existing MemoryCore and activates that user.
 
 Use this only when automation is useful or the AI cannot safely edit files.
 
-The CLI mirror also writes to the same single file: `myney-core/MYNEY.md`.
+The CLI mirror also writes to the same single file: `MYNEY.md`.
 
 Owner, solo:
 

@@ -121,7 +121,7 @@ ${JSON.stringify(updatedState, null, 2)}
 function parseState(content: string): MemoryCoreState {
   const match = content.match(STATE_BLOCK);
   if (!match) {
-    throw new Error(`Missing \`json myney-state\` block in myney-core/${MEMORY_FILE}.`);
+    throw new Error(`Missing \`json myney-state\` block in ${MEMORY_FILE}.`);
   }
   return JSON.parse(match[1]) as MemoryCoreState;
 }
@@ -644,7 +644,7 @@ export function showCommand(root: string, name: string): string {
   if (!target) {
     throw new Error(`Unknown MYney command "${name}".`);
   }
-  return `# ${target.command}\n\n## Purpose\n${target.purpose}\n\n## Source Of Truth\nAll command behavior and state live in \`myney-core/${MEMORY_FILE}\`.\n`;
+  return `# ${target.command}\n\n## Purpose\n${target.purpose}\n\n## Source Of Truth\nAll command behavior and state live in \`${MEMORY_FILE}\`.\n`;
 }
 
 export function checkProject(root: string): CheckResult {
@@ -652,7 +652,7 @@ export function checkProject(root: string): CheckResult {
   const warnings: string[] = [];
   const file = memoryPath(root);
   if (!exists(file)) {
-    failures.push(`Missing myney-core/${MEMORY_FILE}.`);
+    failures.push(`Missing ${MEMORY_FILE}.`);
     return { ok: false, failures, warnings };
   }
 
