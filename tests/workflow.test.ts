@@ -18,8 +18,11 @@ function run(cwd: string, args: string[]) {
   return result;
 }
 
-function json<T>(root: string, path: string): T {
-  return JSON.parse(readFileSync(join(root, path), "utf8")) as T;
+function state<T>(root: string): T {
+  const content = readFileSync(join(root, "myney-core/MYNEY.md"), "utf8");
+  const match = content.match(/```json myney-state\n([\s\S]*?)\n```/);
+  assert.ok(match, "MYNEY.md should contain myney-state JSON");
+  return JSON.parse(match[1]) as T;
 }
 
 describe("MYney workflow", () => {
@@ -59,14 +62,16 @@ describe("MYney workflow", () => {
     run(root, ["quest", "start", "schema-check", "--actor", "vega"]);
     run(root, ["pair", "start", "--actor", "moon", "--partner", "vega", "--task", "Schema validation"]);
 
-    const moon = json<{ activePair: { partner: string; task: string } }>(root, "myney-core/members/moon.json");
-    const vega = json<{ activePair: { partner: string; task: string } }>(root, "myney-core/members/vega.json");
+    const memory = state<{ members: Record<string, { activePair: { partner: string; task: string } }> }>(root);
+    const moon = memory.members.moon;
+    const vega = memory.members.vega;
     assert.equal(moon.activePair.partner, "vega");
     assert.equal(vega.activePair.partner, "moon");
     assert.equal(moon.activePair.task, vega.activePair.task);
 
     run(root, ["quest", "complete", "schema-check", "--actor", "vega"]);
-    const updated = json<{ xp: number; level: number; currentQuest: string | null; inventory: string[] }>(root, "myney-core/members/vega.json");
+    const updatedMemory = state<{ members: Record<string, { xp: number; level: number; currentQuest: string | null; inventory: string[] }> }>(root);
+    const updated = updatedMemory.members.vega;
     assert.equal(updated.xp, 125);
     assert.equal(updated.level, 2);
     assert.equal(updated.currentQuest, null);

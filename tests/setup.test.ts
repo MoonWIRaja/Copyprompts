@@ -16,8 +16,11 @@ function run(cwd: string, args: string[]) {
   });
 }
 
-function json<T>(root: string, path: string): T {
-  return JSON.parse(readFileSync(join(root, path), "utf8")) as T;
+function state<T>(root: string): T {
+  const content = readFileSync(join(root, "myney-core/MYNEY.md"), "utf8");
+  const match = content.match(/```json myney-state\n([\s\S]*?)\n```/);
+  assert.ok(match, "MYNEY.md should contain myney-state JSON");
+  return JSON.parse(match[1]) as T;
 }
 
 describe("MYney setup", () => {
@@ -34,11 +37,11 @@ describe("MYney setup", () => {
   it("creates the owner during first solo setup", () => {
     const result = run(root, ["setup", "--name", "Moon", "--codename", "moon", "--mode", "solo", "--class", "Architect"]);
     assert.equal(result.status, 0, result.stderr);
-    const roster = json<{ owner: string; mode: string; members: string[] }>(root, "myney-core/team/roster.json");
-    const member = json<{ role: string; class: string }>(root, "myney-core/members/moon.json");
-    assert.equal(roster.owner, "moon");
-    assert.equal(roster.mode, "solo");
-    assert.deepEqual(roster.members, ["moon"]);
+    const memory = state<{ owner: string; mode: string; members: Record<string, { role: string; class: string }> }>(root);
+    const member = memory.members.moon;
+    assert.equal(memory.owner, "moon");
+    assert.equal(memory.mode, "solo");
+    assert.deepEqual(Object.keys(memory.members), ["moon"]);
     assert.equal(member.role, "owner");
     assert.equal(member.class, "Architect");
   });
@@ -53,9 +56,9 @@ describe("MYney setup", () => {
     assert.equal(run(root, ["setup", "--name", "Moon", "--codename", "moon", "--mode", "team", "--join-mode", "open"]).status, 0);
     const result = run(root, ["setup", "--name", "Alya", "--codename", "alya", "--class", "Scout"]);
     assert.equal(result.status, 0, result.stderr);
-    const roster = json<{ members: string[]; joinMode: string }>(root, "myney-core/team/roster.json");
-    assert.equal(roster.joinMode, "open");
-    assert.deepEqual(roster.members, ["alya", "moon"]);
+    const memory = state<{ members: Record<string, unknown>; joinMode: string }>(root);
+    assert.equal(memory.joinMode, "open");
+    assert.deepEqual(Object.keys(memory.members).sort(), ["alya", "moon"]);
   });
 
   it("supports owner-approved roster activation", () => {
@@ -99,4 +102,3 @@ describe("MYney setup", () => {
     assert.match(revoked.stderr, /revoked/);
   });
 });
-

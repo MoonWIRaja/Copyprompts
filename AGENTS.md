@@ -1,29 +1,33 @@
 # MYney Agent Instructions
 
 When an AI assistant enters this repo, it should treat `myney-core/` as the
-project memory source of truth.
+project memory source of truth. The memory map is intentionally flat:
+
+```text
+myney-core/
+└── MYNEY.md
+```
 
 ## Universal Command Router
 
 If the user types a command that starts with `/myney-`, do this:
 
-1. Read `myney-core/master-memory.md` if present.
-2. Read the matching file in `myney-core/commands/`.
-3. Follow that command file as the source of truth.
-4. Read existing state before asking questions.
-5. Keep member memory and `team-ledger.md` append-friendly and honest.
+1. Read `myney-core/MYNEY.md`.
+2. Follow the command protocol and JSON state in that single file.
+3. Read existing state before asking questions.
+4. Keep the `ledger` array append-friendly and honest.
 
 Command map:
 
-- `/myney-setup` -> `myney-core/commands/setup.md`
-- `/myney-whoami` -> `myney-core/commands/whoami.md`
-- `/myney-party` -> `myney-core/commands/party.md`
-- `/myney-quest` -> `myney-core/commands/quest.md`
-- `/myney-pair` -> `myney-core/commands/pair.md`
-- `/myney-handoff` -> `myney-core/commands/handoff.md`
-- `/myney-invite` -> `myney-core/commands/invite.md`
-- `/myney-agent` -> `myney-core/commands/agent.md`
-- `/myney-check` -> `myney-core/commands/check.md`
+- `/myney-setup` -> `commands[]` entry in `myney-core/MYNEY.md`
+- `/myney-whoami` -> `commands[]` entry in `myney-core/MYNEY.md`
+- `/myney-party` -> `commands[]` entry in `myney-core/MYNEY.md`
+- `/myney-quest` -> `commands[]` entry in `myney-core/MYNEY.md`
+- `/myney-pair` -> `commands[]` entry in `myney-core/MYNEY.md`
+- `/myney-handoff` -> `commands[]` entry in `myney-core/MYNEY.md`
+- `/myney-invite` -> `commands[]` entry in `myney-core/MYNEY.md`
+- `/myney-agent` -> `agents[]` entry in `myney-core/MYNEY.md`
+- `/myney-check` -> `commands[]` entry in `myney-core/MYNEY.md`
 
 ## Optional CLI Mirror
 

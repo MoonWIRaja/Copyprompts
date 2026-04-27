@@ -93,6 +93,37 @@ export type CommandProtocol = {
   purpose: string;
 };
 
+export type LedgerEntry = {
+  at: string;
+  kind: string;
+  actor: string;
+  message: string;
+};
+
+export type MemoryCoreState = {
+  schemaVersion: 1;
+  project: "EmptyProject";
+  coreName: "MYney";
+  initialized: boolean;
+  mode: ProjectMode | null;
+  joinMode: JoinMode | null;
+  owner: string | null;
+  activeMember: string | null;
+  approvedMembers: string[];
+  members: Record<string, MemberMemory>;
+  invites: Record<string, Invite>;
+  quests: Record<string, Quest>;
+  reminders: {
+    open: string[];
+    completed: string[];
+  };
+  ledger: LedgerEntry[];
+  agents: AgentProtocol[];
+  commands: CommandProtocol[];
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type CheckResult = {
   ok: boolean;
   failures: string[];

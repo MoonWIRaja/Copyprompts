@@ -1,5 +1,0 @@
-# Reminders
-
-## Open
-
-## Completed

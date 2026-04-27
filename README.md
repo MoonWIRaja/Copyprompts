@@ -2,7 +2,7 @@
 
 EmptyProject is a local, file-based RPG MemoryCore powered by MYney.
 It stores identity, team state, quests, pair work, handoffs, reminders, and
-agent protocols in human-readable Markdown and JSON files.
+agent protocols in one human-readable Markdown file: `myney-core/MYNEY.md`.
 
 No backend. No database. No external runtime dependency.
 
@@ -14,11 +14,11 @@ Open this project in any AI-assisted IDE or chat with file access, then type:
 /myney-setup
 ```
 
-The AI reads `AGENTS.md`, loads `myney-core/commands/setup.md`, and follows the
-setup flow. The first setup creates the owner. MYney asks whether this is a solo
+The AI reads `AGENTS.md`, loads `myney-core/MYNEY.md`, and follows the setup
+flow. The first setup creates the owner. MYney asks whether this is a solo
 project or a team project. In team mode, choose one join model:
 
-- `owner-approved`: owner maintains `myney-core/team/roster.json`.
+- `owner-approved`: owner maintains the `approvedMembers` list inside `myney-core/MYNEY.md`.
 - `open`: any valid codename can join by running `/myney-setup`.
 - `invite`: owner creates invite codes with `/myney-invite`.
 
@@ -38,7 +38,7 @@ join mode.
 - `/myney-agent` - list or inspect local subagent protocols.
 - `/myney-check` - validate MemoryCore files and consistency.
 
-The command specs live in `myney-core/commands/`.
+All command specs and live memory state live in `myney-core/MYNEY.md`.
 
 ## Optional CLI Mirror
 
@@ -50,6 +50,17 @@ npm run myney -- command list
 npm run myney -- setup
 npm run myney -- party
 ```
+
+## Memory Map
+
+```text
+myney-core/
+└── MYNEY.md
+```
+
+`MYNEY.md` contains the human protocol sections plus one `json myney-state`
+block that stores roster, members, invites, quests, reminders, ledger entries,
+agents, and commands.
 
 ## Development
 
