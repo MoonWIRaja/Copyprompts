@@ -2,11 +2,16 @@
 
 This file is the universal entrypoint for MYney.
 
-Run this in the project root:
+## Primary Setup
 
-```bash
-npm run myney -- setup
+Type this in the AI chat while the project is open:
+
+```text
+/myney-setup
 ```
+
+The AI should read `AGENTS.md`, then execute the protocol in
+`myney-core/commands/setup.md`.
 
 ## First Run
 
@@ -25,10 +30,26 @@ MYney will ask:
 
 ## Returning Runs
 
-After the project is initialized, every member runs the same setup command.
+After the project is initialized, every member types the same `/myney-setup`
+command.
 MYney detects the existing MemoryCore and activates that user.
 
-## Non-Interactive Examples
+## Other Universal Commands
+
+```text
+/myney-whoami
+/myney-party
+/myney-quest
+/myney-pair
+/myney-handoff
+/myney-invite
+/myney-agent
+/myney-check
+```
+
+## Optional CLI Mirror
+
+Use this only when automation is useful or the AI cannot safely edit files.
 
 Owner, solo:
 

@@ -2,8 +2,16 @@
 
 This folder is MYney's file-based MemoryCore.
 
-Run setup to create the live memory files:
+The primary interface is universal AI slash commands:
+
+```text
+/myney-setup
+```
+
+Command protocol files live in `commands/`.
+
+The optional CLI mirror is available for automation:
 
 ```bash
-npm run myney -- setup
+npm run myney -- command list
 ```

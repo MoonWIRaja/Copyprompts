@@ -2,7 +2,9 @@ import { randomBytes } from "node:crypto";
 import { basename, join } from "node:path";
 import {
   AGENTS,
+  COMMANDS,
   type CheckResult,
+  type CommandProtocol,
   type Invite,
   type JoinMode,
   type MemberMemory,
@@ -153,7 +155,8 @@ export function ensureCoreSkeleton(root: string): void {
     corePath(root, "team"),
     corePath(root, "team", "invites"),
     corePath(root, "quests"),
-    corePath(root, "agents")
+    corePath(root, "agents"),
+    corePath(root, "commands")
   ];
   for (const dir of dirs) {
     ensureDir(dir);
@@ -161,7 +164,7 @@ export function ensureCoreSkeleton(root: string): void {
 
   writeTextIfMissing(
     corePath(root, "master-memory.md"),
-    `# MYney Master Memory\n\nMYney is the Grand Core for EmptyProject.\n\nLoad order:\n\n1. Read \`myney-core/main/main-memory.md\`.\n2. Read \`myney-core/team/roster.json\`.\n3. Read active member memory from \`myney-core/members/\`.\n4. Use \`myney-core/agents/\` for local subagent protocols.\n`
+    `# MYney Master Memory\n\nMYney is the Grand Core for EmptyProject.\n\nLoad order:\n\n1. Read \`myney-core/main/main-memory.md\`.\n2. Read \`myney-core/commands/\` when the user types a \`/myney-*\` command.\n3. Read \`myney-core/team/roster.json\` if it exists.\n4. Read active member memory from \`myney-core/members/\` if the project is initialized.\n5. Use \`myney-core/agents/\` for local subagent protocols.\n`
   );
   writeTextIfMissing(
     corePath(root, "main", "main-memory.md"),
@@ -169,7 +172,7 @@ export function ensureCoreSkeleton(root: string): void {
   );
   writeTextIfMissing(
     corePath(root, "main", "current-session.md"),
-    `# Current Session\n\nRun \`npm run myney -- whoami\` to restore the active member.\n`
+    `# Current Session\n\nType \`/myney-whoami\` to restore the active member. The optional CLI mirror is \`npm run myney -- whoami\`.\n`
   );
   writeTextIfMissing(corePath(root, "main", "reminders.md"), "# Reminders\n\n## Open\n\n## Completed\n");
   writeTextIfMissing(
@@ -181,6 +184,7 @@ export function ensureCoreSkeleton(root: string): void {
     `# Team Ledger\n\nAppend-only log for decisions, blockers, pairs, handoffs, quest completions, and gates.\n\n## Legend\n\n- OWNER\n- JOIN\n- INVITE\n- QUEST\n- PAIR\n- HANDOFF\n- BLOCKER\n- CHECK\n\n## Entries\n`
   );
   writeAgents(root);
+  writeCommands(root);
 }
 
 export function writeAgents(root: string): void {
@@ -190,7 +194,81 @@ export function writeAgents(root: string): void {
       `# ${agent.name} - ${agent.title}\n\n## Purpose\n${agent.purpose}\n\n## When To Use\n${agent.commandHint}\n\n## Protocol\n- Read \`myney-core/master-memory.md\` before acting.\n- Respect the current project roster and active member.\n- Keep file-based memory consistent and append-friendly.\n- If the task writes member state, update the relevant member JSON and team ledger.\n`
     );
   }
-  writeJson(corePath(root, "agents", "agents.json"), AGENTS);
+  writeJsonIfMissing(corePath(root, "agents", "agents.json"), AGENTS);
+}
+
+export function writeCommands(root: string): void {
+  const commandDocs: Record<string, string> = {
+    "setup.md": commandDoc("setup", [
+      "If `myney-core/team/roster.json` is missing, this is first-run setup and the current user becomes owner.",
+      "Ask for display name, codename, RPG class, solo/team mode, and join mode when team mode is selected.",
+      "Create the roster JSON, owner member JSON, core memory files, and append an OWNER entry to `team-ledger.md`.",
+      "If the roster exists, ask for member identity and activate or create that member according to join mode.",
+      "In `owner-approved` mode, only codenames in `approvedMembers` may join.",
+      "In `open` mode, any valid codename may join.",
+      "In `invite` mode, ask for an invite code, verify it is active, then mark it used."
+    ], "Optional CLI mirror: `npm run myney -- setup`."),
+    "whoami.md": commandDoc("whoami", [
+      "Read `myney-core/team/roster.json` and identify the active member, or ask the user for their codename.",
+      "Read `myney-core/members/<codename>.json`.",
+      "Show role, class, level, XP, current quest, active pair, last blocker, and last handoff.",
+      "Update `lastSession` and increment `sessionsCount`."
+    ], "Optional CLI mirror: `npm run myney -- whoami --actor <codename>`."),
+    "party.md": commandDoc("party", [
+      "Read roster, all member JSON files, active pairs, blockers, and current quests.",
+      "Show owner, mode, join mode, active member, and one compact line per member.",
+      "Do not write files."
+    ], "Optional CLI mirror: `npm run myney -- party`."),
+    "quest.md": commandDoc("quest", [
+      "Support add, list, start, and complete actions.",
+      "Quest files live in `myney-core/quests/<quest-id>.json`.",
+      "Starting a quest sets member `currentQuest`.",
+      "Completing a quest marks it complete, awards XP, recalculates level, clears currentQuest, adds an inventory note, and appends a QUEST ledger entry."
+    ], "Optional CLI mirrors: `npm run myney -- quest add|list|start|complete`."),
+    "pair.md": commandDoc("pair", [
+      "Support start, update, and end actions.",
+      "A pair always has exactly two different members.",
+      "Both member JSON files must contain cross-consistent `activePair` records with the same task and timestamps.",
+      "Ending a pair clears `activePair` in both member files and appends a PAIR ledger entry."
+    ], "Optional CLI mirror: `npm run myney -- pair start|update|end`."),
+    "handoff.md": commandDoc("handoff", [
+      "Ask what finished, the next action, and whether there is a blocker.",
+      "Write `lastHandoff` to the member JSON.",
+      "Set `lastBlocker` only when a real blocker is reported.",
+      "Append HANDOFF or BLOCKER to `team-ledger.md`."
+    ], "Optional CLI mirror: `npm run myney -- handoff`."),
+    "invite.md": commandDoc("invite", [
+      "Only the owner can create, list, or revoke invites.",
+      "Invite files live in `myney-core/team/invites/<CODE>.json`.",
+      "Create active invites, revoke unused invites, and never reactivate a used invite.",
+      "Reserved invites must match the member codename during `/myney-setup`."
+    ], "Optional CLI mirror: `npm run myney -- invite create|list|revoke`."),
+    "agent.md": commandDoc("agent", [
+      "List agent protocols from `myney-core/agents/agents.json`.",
+      "Show a specific agent markdown file when requested.",
+      "Agents are local protocols, not separate running processes."
+    ], "Optional CLI mirror: `npm run myney -- agent list|show <name>`."),
+    "check.md": commandDoc("check", [
+      "Validate required MemoryCore files, command files, agent files, roster JSON, member JSON, invite JSON, quest JSON, and pair consistency.",
+      "Before first setup, report that roster/member state is not initialized yet.",
+      "After setup, failures must be fixed before memory-sensitive work continues."
+    ], "Optional CLI mirror: `npm run myney -- check`.")
+  };
+
+  for (const command of COMMANDS) {
+    writeTextIfMissing(corePath(root, "commands", command.file), commandDocs[command.file]);
+  }
+  writeJsonIfMissing(corePath(root, "commands", "commands.json"), COMMANDS);
+}
+
+function writeJsonIfMissing(path: string, value: unknown): void {
+  if (!exists(path)) {
+    writeJson(path, value);
+  }
+}
+
+function commandDoc(name: string, steps: string[], footer: string): string {
+  return `# /myney-${name}\n\n## Purpose\nUniversal AI command protocol for MYney ${name} flow.\n\n## How AI Should Execute\n${steps.map((step, index) => `${index + 1}. ${step}`).join("\n")}\n\n## Guardrails\n- Prefer this command file as the source of truth when the user types \`/myney-${name}\`.\n- Do not invent missing state; read files first, then ask only for values that are not discoverable.\n- Keep JSON valid, timestamps ISO-8601, and ledger entries append-only.\n- If direct file edits are risky, use the optional CLI mirror.\n\n## CLI Mirror\n${footer}\n`;
 }
 
 export function appendLedger(root: string, kind: string, actor: string, message: string): void {
@@ -628,6 +706,21 @@ export function showAgent(root: string, name: string): string {
   return readText(corePath(root, "agents", target.file));
 }
 
+export function listCommands(root: string): string {
+  ensureCoreSkeleton(root);
+  return COMMANDS.map((command: CommandProtocol) => `${command.command}: ${command.purpose} (${command.file})`).join("\n");
+}
+
+export function showCommand(root: string, name: string): string {
+  ensureCoreSkeleton(root);
+  const normalized = name.startsWith("/") ? name : `/myney-${name.replace(/^myney-/, "")}`;
+  const target = COMMANDS.find((command) => command.command === normalized || command.file === name);
+  if (!target) {
+    throw new Error(`Unknown MYney command "${name}".`);
+  }
+  return readText(corePath(root, "commands", target.file));
+}
+
 export function checkProject(root: string): CheckResult {
   const failures: string[] = [];
   const warnings: string[] = [];
@@ -641,7 +734,8 @@ export function checkProject(root: string): CheckResult {
     corePath(root, "team", "team-ledger.md"),
     corePath(root, "team", "invites"),
     corePath(root, "quests"),
-    corePath(root, "agents")
+    corePath(root, "agents"),
+    corePath(root, "commands")
   ];
   for (const item of required) {
     if (!exists(item)) {
@@ -651,6 +745,11 @@ export function checkProject(root: string): CheckResult {
   for (const agent of AGENTS) {
     if (!exists(corePath(root, "agents", agent.file))) {
       failures.push(`Missing agent ${agent.file}`);
+    }
+  }
+  for (const command of COMMANDS) {
+    if (!exists(corePath(root, "commands", command.file))) {
+      failures.push(`Missing command ${command.file}`);
     }
   }
   if (!exists(rosterPath(root))) {
@@ -723,4 +822,3 @@ export function renderCheck(result: CheckResult): string {
   }
   return lines.join("\n");
 }
-

@@ -83,5 +83,16 @@ describe("MYney workflow", () => {
     const show = run(root, ["agent", "show", "Vega"]);
     assert.match(show.stdout, /Integrity Guardian/);
   });
-});
 
+  it("lists and shows universal command protocols", () => {
+    run(root, ["setup", "--name", "Moon", "--codename", "moon", "--mode", "solo"]);
+    const list = run(root, ["command", "list"]);
+    assert.match(list.stdout, /\/myney-setup/);
+    assert.match(list.stdout, /\/myney-party/);
+    assert.match(list.stdout, /\/myney-check/);
+
+    const show = run(root, ["command", "show", "setup"]);
+    assert.match(show.stdout, /# \/myney-setup/);
+    assert.match(show.stdout, /owner/);
+  });
+});

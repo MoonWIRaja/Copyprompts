@@ -9,6 +9,7 @@ import {
   handoff,
   isInitialized,
   listAgents,
+  listCommands,
   listInvites,
   listQuests,
   renderCheck,
@@ -17,6 +18,7 @@ import {
   revokeInvite,
   runSetup,
   showAgent,
+  showCommand,
   startPair,
   startQuest,
   updatePair
@@ -87,6 +89,7 @@ function help(): string {
     "  handoff",
     "  invite create|list|revoke",
     "  agent list|show <name>",
+    "  command list|show <name>",
     "  check"
   ].join("\n");
 }
@@ -233,6 +236,17 @@ async function main(): Promise<void> {
     }
   }
 
+  if (command === "command") {
+    if (subcommand === "list") {
+      console.log(listCommands(root));
+      return;
+    }
+    if (subcommand === "show") {
+      console.log(showCommand(root, positionals[2] || ""));
+      return;
+    }
+  }
+
   if (command === "check") {
     const result = checkProject(root);
     console.log(renderCheck(result));
@@ -249,4 +263,3 @@ main().catch((error) => {
   console.error(error instanceof Error ? error.message : String(error));
   process.exitCode = 1;
 });
-
