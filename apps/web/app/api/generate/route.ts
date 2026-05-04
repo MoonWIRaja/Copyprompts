@@ -59,7 +59,8 @@ export async function POST(req: Request) {
       const parts = generatedCode.split('▀▀▀▀▀▀▀▀');
       for (const part of parts) {
         if (part.includes('const ') || part.includes('React.')) {
-          generatedCode = part.split('▄▄▄▄▄▄▄▄')[0].trim();
+          const splitPart = part.split('▄▄▄▄▄▄▄▄');
+          generatedCode = splitPart[0]?.trim() || '';
           break;
         }
       }
