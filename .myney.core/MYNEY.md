@@ -108,7 +108,7 @@ When a user types a `/myney-*` command:
       "class": "Prompts Summoner",
       "level": 1,
       "xp": 100,
-      "currentQuest": "Enforce Absolute Auto-Sync",
+      "currentQuest": "Clarify Ritual Workflow",
       "activePair": null,
       "inventory": [],
       "lastHandoff": "Marketplace UI refined with CreateModal and mock data.",
@@ -157,6 +157,16 @@ When a user types a `/myney-*` command:
       "xpReward": 100,
       "startedAt": "2026-05-04T20:43:00+08:00",
       "completedAt": "2026-05-04T20:45:00+08:00"
+    },
+    "q4": {
+      "id": "q4",
+      "title": "Clarify Ritual Workflow",
+      "description": "Explain how the Auto-Sync Ritual is triggered and handled.",
+      "status": "completed",
+      "owner": "moon",
+      "xpReward": 50,
+      "startedAt": "2026-05-04T20:47:00+08:00",
+      "completedAt": "2026-05-04T20:48:00+08:00"
     }
   },
   "reminders": {
@@ -198,6 +208,13 @@ When a user types a `/myney-*` command:
       "actor": "MYney",
       "kind": "protocol-refinement",
       "summary": "Enforced Absolute Auto-Sync: All instructions (big or small) now follow the full Quest-Execute-Memory-Push cycle."
+    },
+    {
+      "id": "workflow-clarification",
+      "at": "2026-05-04T20:48:00+08:00",
+      "actor": "MYney",
+      "kind": "communication",
+      "summary": "Clarified that the Auto-Sync Ritual is now the default background behavior for all user instructions."
     }
   ],
   "todos": [],

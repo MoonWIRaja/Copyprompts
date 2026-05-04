@@ -48,6 +48,7 @@ join mode.
 - `/myney-handoff` - save session end state and next action.
 - `/myney-invite` - owner-only invite management.
 - `/myney-agent` - list or inspect local subagent protocols.
+- `/myney-autosync` - Automates Quest -> Build -> Memory -> GitHub Push flow (All changes).
 - `/myney-check` - validate MemoryCore files and consistency.
 
 All command specs and live memory state live in `MYNEY.md`.
