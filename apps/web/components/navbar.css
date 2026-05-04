@@ -1,0 +1,126 @@
+.navbar {
+  height: var(--header-height);
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--sidebar-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  transition: all 0.3s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  .navbar {
+    background-color: rgba(10, 10, 10, 0.8);
+  }
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+}
+
+.sidebar-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--muted);
+  margin-right: 12px;
+  transition: all 0.2s;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.sidebar-toggle-btn:hover {
+  background-color: var(--sidebar-hover);
+  color: var(--foreground);
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted-foreground);
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.breadcrumb-separator {
+  color: var(--muted-foreground);
+  opacity: 0.3;
+}
+
+.breadcrumb-item {
+  color: var(--foreground);
+  font-weight: 500;
+}
+
+.nav-icon-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--muted);
+  transition: all 0.2s;
+  background: transparent;
+  border: none;
+}
+
+.nav-icon-btn:hover {
+  background-color: var(--sidebar-hover);
+  color: var(--foreground);
+}
+
+.nav-divider {
+  width: 1px;
+  height: 16px;
+  background: var(--sidebar-border);
+  margin: 0 8px;
+}
+
+.nav-action-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--sidebar-hover);
+  border: 1px solid var(--sidebar-border);
+  color: var(--foreground);
+}
+
+.nav-action-btn:hover {
+  background: var(--sidebar-border);
+}
+
+.nav-action-btn.primary {
+  background: var(--sidebar-accent);
+  color: var(--sidebar-accent-foreground);
+  border: 1px solid var(--sidebar-accent);
+}
+
+.nav-action-btn.primary:hover {
+  opacity: 0.9;
+}
