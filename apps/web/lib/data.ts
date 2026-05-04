@@ -13,6 +13,7 @@ export interface ComponentData {
   };
   previewUrl: string;
   prompt: string;
+  code?: string;
   createdAt: string;
 }
 

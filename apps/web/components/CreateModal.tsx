@@ -15,6 +15,7 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
   const [prompt, setPrompt] = React.useState('');
   const [isTested, setIsTested] = React.useState(false);
   const [isTesting, setIsTesting] = React.useState(false);
+  const [generatedCode, setGeneratedCode] = React.useState('');
 
   if (!isOpen) return null;
 
@@ -39,8 +40,9 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
         throw new Error(data.error || 'Failed to generate component');
       }
 
+      setGeneratedCode(data.code);
       setIsTested(true);
-      alert('AI Generation Successful! Preview updated.');
+      // alert('AI Generation Successful! Preview updated.');
     } catch (error: any) {
       console.error('Test Error:', error);
       alert(`Error: ${error.message}`);
@@ -56,6 +58,7 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
       name,
       category,
       prompt,
+      code: generatedCode,
       previewUrl: 'https://cdn.21st.dev/bundled/209.html?theme=dark&dark=true', // Mock preview
     });
 
@@ -109,10 +112,30 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
           <div className="modal-body-split">
             <div className="modal-left-pane">
               <div className="modal-dotted-bg" />
-              <iframe 
-                src="https://cdn.21st.dev/bundled/209.html?theme=dark&dark=true" 
-                title="Component Preview"
-              />
+              {isTesting ? (
+                <div className="preview-loading">
+                  <RotateCw className="animate-spin" size={32} />
+                  <span>Summoning Component...</span>
+                </div>
+              ) : isTested && generatedCode ? (
+                <div className="code-preview-container">
+                  <div className="code-preview-header">
+                    <span className="code-badge">TSX</span>
+                    <button className="code-copy-btn" onClick={() => navigator.clipboard.writeText(generatedCode)}>
+                      <Copy size={12} />
+                      Copy Code
+                    </button>
+                  </div>
+                  <pre className="code-preview-content">
+                    <code>{generatedCode}</code>
+                  </pre>
+                </div>
+              ) : (
+                <iframe 
+                  src="https://cdn.21st.dev/bundled/209.html?theme=dark&dark=true" 
+                  title="Component Preview"
+                />
+              )}
             </div>
             <div className="modal-right-pane">
               <div className="modal-form">

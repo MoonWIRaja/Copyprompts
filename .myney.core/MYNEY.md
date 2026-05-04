@@ -108,7 +108,7 @@ When a user types a `/myney-*` command:
       "class": "Prompts Summoner",
       "level": 1,
       "xp": 100,
-      "currentQuest": "Fix Web API Env",
+      "currentQuest": "Implement Live Code Preview",
       "activePair": null,
       "inventory": [],
       "lastHandoff": "Marketplace UI refined with CreateModal and mock data.",
@@ -207,6 +207,16 @@ When a user types a `/myney-*` command:
       "xpReward": 50,
       "startedAt": "2026-05-04T21:13:00+08:00",
       "completedAt": "2026-05-04T21:14:00+08:00"
+    },
+    "q9": {
+      "id": "q9",
+      "title": "Implement Live Code Preview",
+      "description": "Enable real-time AI code display in the CreateModal preview pane.",
+      "status": "completed",
+      "owner": "moon",
+      "xpReward": 250,
+      "startedAt": "2026-05-04T21:17:00+08:00",
+      "completedAt": "2026-05-04T21:20:00+08:00"
     }
   },
   "reminders": {
@@ -283,6 +293,13 @@ When a user types a `/myney-*` command:
       "actor": "MYney",
       "kind": "bugfix",
       "summary": "Copied root .env to apps/web/.env to ensure Next.js API routes can access the GEMINI_API_KEY."
+    },
+    {
+      "id": "live-code-preview",
+      "at": "2026-05-04T21:20:00+08:00",
+      "actor": "MYney",
+      "kind": "feature",
+      "summary": "Updated CreateModal to support live code preview. Replaced mock iframe with a dynamic code display and loading state for AI generation."
     }
   ],
   "todos": [],
