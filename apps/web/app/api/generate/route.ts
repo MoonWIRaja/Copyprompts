@@ -34,7 +34,7 @@ export async function POST(req: Request) {
         output = execSync(cmd, { encoding: 'utf8', timeout: 90000 });
         if (output) break; 
       } catch (execError: any) {
-        lastError = execError.stdout || execError.stderr || execError.message;
+        lastError = (execError.stdout?.toString() || execError.stderr?.toString() || execError.message || 'Unknown CLI error');
         console.warn(`[Gemini CLI] Command failed: ${cmd.substring(0, 20)}... Error: ${lastError.substring(0, 100)}`);
         
         // If it's a 429 Rate Limit error, we should inform the user specifically
