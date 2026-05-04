@@ -82,15 +82,20 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
   const [category, setCategory] = useState('ai-chats');
   const [manualCode, setManualCode] = useState(`const MyComponent = () => {
   return (
-    <div className="p-12 bg-white dark:bg-zinc-950 rounded-[3rem] border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
-      <h1 className="text-4xl font-black italic tracking-tighter text-black dark:text-white uppercase">
-        Neo Brutalist UI
+    <div className="p-10 bg-white dark:bg-zinc-900 rounded-[2rem] shadow-2xl shadow-indigo-500/10 border border-zinc-100 dark:border-zinc-800 max-w-md">
+      <div className="w-12 h-12 bg-indigo-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-indigo-500/20">
+        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+      </div>
+      <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
+        Premium Experience
       </h1>
-      <p className="mt-4 text-xl font-medium text-zinc-600 dark:text-zinc-400">
-        Edit this code manually or ask AI to refine it.
+      <p className="mt-3 text-zinc-500 dark:text-zinc-400 leading-relaxed">
+        This is a sleek, modern component. You can edit the JSX manually or ask the AI to refine it for you.
       </p>
-      <button className="mt-8 px-8 py-4 bg-[#FF3D00] text-white font-bold border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all">
-        GET STARTED
+      <button className="mt-8 w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-2xl transition-all active:scale-[0.98]">
+        Get Started
       </button>
     </div>
   );
