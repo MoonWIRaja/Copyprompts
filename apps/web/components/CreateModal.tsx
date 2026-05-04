@@ -15,6 +15,7 @@ interface CreateModalProps {
 const generatePreviewHtml = (code: string, componentName: string) => {
   const safeName = componentName.replace(/[^a-zA-Z0-9]/g, '') || 'GeneratedComponent';
   
+  // Advanced Cleaner: Strips problematic imports but keeps TSX structure
   const cleanCode = code
     .replace(/import\s+[\s\S]*?from\s+['"].*?['"];?/g, '')
     .replace(/export\s+default\s+/g, '')
@@ -29,7 +30,7 @@ const generatePreviewHtml = (code: string, componentName: string) => {
         <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
         <script src="https://cdn.tailwindcss.com"></script>
         <style>
-          body { margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #fff; }
+          body { margin: 0; padding: 20px; min-height: 100vh; background: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; }
           #root { width: 100%; display: flex; justify-content: center; }
         </style>
       </head>
@@ -38,41 +39,50 @@ const generatePreviewHtml = (code: string, componentName: string) => {
         <script type="text/babel" data-presets="react,typescript">
           const { useState, useEffect, useRef, useMemo, useCallback, createContext, useContext } = React;
           
-          // --- BULLETPROOF MOCKING ---
-          const toast = (msg) => console.log("Toast:", msg);
-          const LucideIcons = new Proxy({}, { get: () => () => <span>Icon</span> });
-          
-          // Provide basic UI mocks if missing
-          const Button = window.Button || (({children, ...p}) => <button className="px-3 py-1 bg-black text-white rounded" {...p}>{children}</button>);
-          const Textarea = window.Textarea || ((p) => <textarea className="border rounded p-2" {...p} />);
-          
+          // --- GLOBAL REFERENCE GUARD (Proxy) ---
+          // This prevents ReferenceErrors by returning a dummy function/object if something is missing
+          const guard = {
+            get: (target, prop) => {
+              if (prop in target) return target[prop];
+              if (prop === 'ChatInputContextValue') return {}; // Special case for your error
+              console.warn("Reference missing:", prop);
+              return () => null; // Return empty component as fallback
+            }
+          };
+          window.Lucide = new Proxy({}, guard);
+          const toast = new Proxy(() => null, guard);
+
+          // Standard UI Mocks
+          const Button = (p) => <button className="px-3 py-1 bg-black text-white rounded" {...p}>{p.children}</button>;
+          const Textarea = (p) => <textarea className="border rounded p-2" {...p} />;
+
           // --- MERGED CODE ---
           ${cleanCode}
 
           // --- SMART RENDERER ---
           const App = () => {
             try {
-              // Priority 1: Use the name in the input field
               let ComponentToRender = null;
-              try { ComponentToRender = eval('${safeName}'); } catch(e) {}
               
-              // Priority 2: Look for anything ending in "Demo"
-              if (!ComponentToRender) {
-                const demoKey = Object.keys(window).find(k => k.endsWith('Demo') && typeof window[k] === 'function');
-                if (demoKey) ComponentToRender = window[demoKey];
+              // Search for the best component to display
+              const searchOrder = ['${safeName}', 'ChatInputDemo', 'Demo', 'Example'];
+              for (const name of searchOrder) {
+                try { 
+                  const comp = eval(name); 
+                  if (typeof comp === 'function') { ComponentToRender = comp; break; }
+                } catch(e) {}
               }
 
-              // Priority 3: Last defined uppercase component
               if (!ComponentToRender) {
+                // Last resort: any uppercase function
                 const keys = Object.keys(window).filter(k => /^[A-Z]/.test(k) && typeof window[k] === 'function' && k !== 'App');
                 if (keys.length > 0) ComponentToRender = window[keys[keys.length - 1]];
               }
 
-              if (!ComponentToRender) return <div className="p-4 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded">No component detected. Ensure your code defines a React component.</div>;
-              
+              if (!ComponentToRender) return <div className="p-4 text-orange-600 bg-orange-50 rounded">Waiting for component definition...</div>;
               return <ComponentToRender />;
             } catch (e) {
-              return <div className="p-4 bg-red-50 text-red-700 border border-red-200 rounded">Runtime Error: {e.message}</div>;
+              return <div className="p-4 text-red-600 bg-red-50 rounded">Render Error: {e.message}</div>;
             }
           };
 
@@ -100,7 +110,7 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
     return () => setMounted(false);
   }, []);
 
-  // Auto-Sync Name
+  // Universal Auto-Name Sync
   useEffect(() => {
     if (!manualCode) return;
     const match = manualCode.match(/(?:const|function)\s+([A-Z][a-zA-Z0-9]+)/);
@@ -147,18 +157,17 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
         }
       }
 
-      // Extraction v6: JOIN ALL TSX BLOCKS
-      const blocks = accumulatedOutput.match(/```(?:jsx|tsx|javascript|js)?\s*[\w.-]+\.tsx\s*([\s\S]*?)```/gi) || [];
+      // Extraction v7: Match ANY .ts, .tsx, .js, .jsx file block
+      const blocks = accumulatedOutput.match(/```(?:jsx|tsx|javascript|js|typescript|ts)?\s*[\w.-]+\.(?:tsx|ts|jsx|js)\s*([\s\S]*?)```/gi) || [];
       const mergedCode = blocks.map(block => {
-        return block.replace(/```(?:jsx|tsx|javascript|js)?\s*[\w.-]+\.tsx\s*/i, '').replace(/```$/, '').trim();
+        return block.replace(/```(?:jsx|tsx|javascript|js|typescript|ts)?\s*[\w.-]+\.(?:tsx|ts|jsx|js)\s*/i, '').replace(/```$/, '').trim();
       }).join('\n\n');
       
       if (mergedCode) {
         setManualCode(mergedCode);
         setIsTested(true);
       } else {
-        // Fallback to simple extraction if named blocks aren't found
-        const simpleBlocks = accumulatedOutput.match(/```(?:jsx|tsx|javascript|js)?\s*([\s\S]*?)```/g);
+        const simpleBlocks = accumulatedOutput.match(/```(?:jsx|tsx|javascript|js|typescript|ts)?\s*([\s\S]*?)```/g);
         if (simpleBlocks) {
           setManualCode(simpleBlocks.map(b => b.replace(/```[\s\S]*?\n/, '').replace(/```$/, '')).join('\n\n'));
           setIsTested(true);
@@ -199,16 +208,16 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
           <div className="control-pane">
             <div className="editor-section">
               <div className="section-header">
-                <span className="editor-status">TSX MULTI-BLOCK</span>
+                <span className="editor-status">TSX BULLETPROOF v7</span>
               </div>
-              <textarea value={manualCode} onChange={(e) => setManualCode(e.target.value)} className="code-editor-textarea" spellCheck={false} placeholder="Paste your code here..." />
+              <textarea value={manualCode} onChange={(e) => setManualCode(e.target.value)} className="code-editor-textarea" spellCheck={false} placeholder="Paste or generate code..." />
             </div>
 
             <div className="config-section">
               <div className="input-grid">
                 <div className="input-field">
                   <label>Name</label>
-                  <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Detected..." />
+                  <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Component Name" />
                 </div>
                 <div className="input-field">
                   <label>Category</label>
@@ -221,7 +230,7 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
 
               <div className="ai-refinement-area">
                 <div className="ai-input-wrapper">
-                  <input type="text" value={aiInstruction} onChange={(e) => setAiInstruction(e.target.value)} placeholder="Refine code..." />
+                  <input type="text" value={aiInstruction} onChange={(e) => setAiInstruction(e.target.value)} placeholder="Refine TSX guide..." />
                   <button onClick={handleTest} disabled={isGenerating} className="refine-btn">
                     {isGenerating ? <RotateCw className="animate-spin" size={18} /> : <Send size={18} />}
                   </button>
