@@ -22,8 +22,8 @@ export async function POST(req: Request) {
     OUTPUT: Return ONLY the code block. NO explanations.`;
 
     const binPath = '/opt/nodejs/bin/gemini';
-    // Using 1.5-pro for better stability
-    const args = ['--model', 'gemini-1.5-pro', '-p', fullPrompt];
+    // Using models/ prefix to ensure the CLI picks the correct stable model
+    const args = ['--model', 'models/gemini-1.5-flash', '-p', fullPrompt];
 
     const encoder = new TextEncoder();
 

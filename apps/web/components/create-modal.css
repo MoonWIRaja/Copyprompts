@@ -371,14 +371,17 @@
 }
 
 .streaming-logs {
-  flex: 1;
-  background: #0a0a0a;
-  border: 1px solid #222;
-  border-radius: 8px;
-  margin: 10px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 180px; /* Smaller terminal */
+  background: rgba(10, 10, 10, 0.95);
+  backdrop-filter: blur(10px);
+  border-top: 2px solid #333;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  z-index: 50;
   font-family: 'Fira Code', 'Courier New', Courier, monospace;
 }
 
@@ -412,15 +415,13 @@
 
 .terminal-body {
   flex: 1;
-  padding: 15px;
+  padding: 12px;
   color: #00ff41; 
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 11px; /* Smaller font for logs */
+  line-height: 1.4;
   overflow-y: auto;
-  max-height: 450px; /* Force a scrollable height */
   white-space: pre-wrap;
   word-break: break-all;
-  background: #000;
 }
 
 .terminal-body::-webkit-scrollbar {
