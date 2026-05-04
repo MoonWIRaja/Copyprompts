@@ -108,7 +108,7 @@ When a user types a `/myney-*` command:
       "class": "Prompts Summoner",
       "level": 1,
       "xp": 100,
-      "currentQuest": "Fix All Preview Errors",
+      "currentQuest": "Add API Retry + Fallback",
       "activePair": null,
       "inventory": [],
       "lastHandoff": "Marketplace UI refined with CreateModal and mock data.",
@@ -247,6 +247,16 @@ When a user types a `/myney-*` command:
       "xpReward": 200,
       "startedAt": "2026-05-04T21:30:00+08:00",
       "completedAt": "2026-05-04T21:34:00+08:00"
+    },
+    "q13": {
+      "id": "q13",
+      "title": "Add API Retry + Fallback",
+      "description": "Handle Gemini high-demand errors with retry logic and fallback model.",
+      "status": "completed",
+      "owner": "moon",
+      "xpReward": 200,
+      "startedAt": "2026-05-04T21:33:00+08:00",
+      "completedAt": "2026-05-04T21:36:00+08:00"
     }
   },
   "reminders": {
@@ -351,6 +361,13 @@ When a user types a `/myney-*` command:
       "actor": "MYney",
       "kind": "bugfix",
       "summary": "Rewrote AI prompt for plain JSX, added TypeScript stripping in preview, used React.createElement for mounting, switched to production React builds to suppress warnings."
+    },
+    {
+      "id": "api-retry-fallback",
+      "at": "2026-05-04T21:36:00+08:00",
+      "actor": "MYney",
+      "kind": "resilience",
+      "summary": "Added 3-retry with backoff + fallback model (gemini-2.0-flash) to API route. Switched primary model to gemini-2.5-flash (GA, stable)."
     }
   ],
   "todos": [],
