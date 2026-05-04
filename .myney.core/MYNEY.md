@@ -49,7 +49,7 @@ entries live here.
 - **Pair Sync** (`/myney-pair`) - Maintains cross-consistent pair state between two members.
 - **Invite Gate** (`/myney-invite`) - Lets the owner control team activation with invite codes.
 - **Agent Protocols** (`/myney-agent`) - Lists and explains MYney, Lumina, Nara, Kaizen, Riven, Vega, and Echo.
-- **Auto-Sync Ritual** (`/myney-autosync`) - Automates Quest -> Build -> Memory -> GitHub Push flow.
+- **Auto-Sync Ritual** (`/myney-autosync`) - Automates Quest -> Build -> Memory -> GitHub Push flow (No exceptions: big or small).
 - **Integrity Check** (`/myney-check`) - Validates the single-file state, classes, skills, members, pairs, and todos.
 
 ## RPG Coding Classes
@@ -108,7 +108,7 @@ When a user types a `/myney-*` command:
       "class": "Prompts Summoner",
       "level": 1,
       "xp": 100,
-      "currentQuest": "Implement Auto-Sync Ritual",
+      "currentQuest": "Enforce Absolute Auto-Sync",
       "activePair": null,
       "inventory": [],
       "lastHandoff": "Marketplace UI refined with CreateModal and mock data.",
@@ -147,6 +147,16 @@ When a user types a `/myney-*` command:
       "xpReward": 200,
       "startedAt": "2026-05-04T20:38:00+08:00",
       "completedAt": "2026-05-04T20:42:00+08:00"
+    },
+    "q3": {
+      "id": "q3",
+      "title": "Enforce Absolute Auto-Sync",
+      "description": "Refine the Auto-Sync Ritual to apply to all changes regardless of size.",
+      "status": "completed",
+      "owner": "moon",
+      "xpReward": 100,
+      "startedAt": "2026-05-04T20:43:00+08:00",
+      "completedAt": "2026-05-04T20:45:00+08:00"
     }
   },
   "reminders": {
@@ -181,6 +191,13 @@ When a user types a `/myney-*` command:
       "actor": "MYney",
       "kind": "skill-install",
       "summary": "Successfully installed 'Auto-Sync Ritual'. From now on, every major instruction will trigger a Quest -> Build -> Memory -> Push cycle."
+    },
+    {
+      "id": "absolute-autosync",
+      "at": "2026-05-04T20:45:00+08:00",
+      "actor": "MYney",
+      "kind": "protocol-refinement",
+      "summary": "Enforced Absolute Auto-Sync: All instructions (big or small) now follow the full Quest-Execute-Memory-Push cycle."
     }
   ],
   "todos": [],
@@ -308,7 +325,7 @@ When a user types a `/myney-*` command:
     {
       "command": "/myney-autosync",
       "file": "autosync.md",
-      "purpose": "Automate Quest -> Build -> Memory -> GitHub Push flow."
+      "purpose": "Automate Quest -> Build -> Memory -> GitHub Push flow (All changes)."
     },
     {
       "command": "/myney-check",
@@ -360,7 +377,7 @@ When a user types a `/myney-*` command:
     {
       "name": "Auto-Sync Ritual",
       "trigger": "/myney-autosync",
-      "purpose": "Automates Quest -> Build -> Memory -> GitHub Push flow."
+      "purpose": "Automates Quest -> Build -> Memory -> GitHub Push flow (All changes)."
     },
     {
       "name": "Integrity Check",
