@@ -44,16 +44,13 @@ const generatePreviewHtml = (code: string, componentName: string) => {
       </head>
       <body>
         <div id="root"></div>
-        <script type="text/babel">
+        <script type="text/babel" data-presets="react,typescript">
           const { useState, useEffect, useRef, useMemo, useCallback } = React;
           
           ${cleanCode}
 
-          const App = () => {
-            const [err, setErr] = useState(null);
-            
+          const App: React.FC = () => {
             try {
-              // Try to find the component by the name provided or the last defined variable
               const ComponentToRender = typeof ${safeName} !== 'undefined' ? ${safeName} : null;
               
               if (!ComponentToRender) {
@@ -63,13 +60,14 @@ const generatePreviewHtml = (code: string, componentName: string) => {
                   </div>
                 );
               }
+              // @ts-ignore
               return <ComponentToRender />;
-            } catch (e) {
+            } catch (e: any) {
               return <div style={{color: '#ef4444'}}>{e.message}</div>;
             }
           };
 
-          const root = ReactDOM.createRoot(document.getElementById('root'));
+          const root = ReactDOM.createRoot(document.getElementById('root')!);
           root.render(<App />);
         </script>
       </body>
@@ -80,7 +78,15 @@ const generatePreviewHtml = (code: string, componentName: string) => {
 export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: CreateModalProps) => {
   const [name, setName] = useState('');
   const [category, setCategory] = useState('ai-chats');
-  const [manualCode, setManualCode] = useState(`const MyComponent = () => {
+  const [manualCode, setManualCode] = useState(`interface MyComponentProps {
+  title?: string;
+  description?: string;
+}
+
+const MyComponent: React.FC<MyComponentProps> = ({ 
+  title = "TypeScript Enabled", 
+  description = "This editor now supports full TSX syntax with Interfaces and Types." 
+}) => {
   return (
     <div className="p-10 bg-white dark:bg-zinc-900 rounded-[2rem] shadow-2xl shadow-indigo-500/10 border border-zinc-100 dark:border-zinc-800 max-w-md">
       <div className="w-12 h-12 bg-indigo-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-indigo-500/20">
@@ -89,13 +95,13 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
         </svg>
       </div>
       <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
-        Premium Experience
+        {title}
       </h1>
       <p className="mt-3 text-zinc-500 dark:text-zinc-400 leading-relaxed">
-        This is a sleek, modern component. You can edit the JSX manually or ask the AI to refine it for you.
+        {description}
       </p>
       <button className="mt-8 w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-2xl transition-all active:scale-[0.98]">
-        Get Started
+        Deploy TSX Component
       </button>
     </div>
   );
