@@ -108,7 +108,7 @@ When a user types a `/myney-*` command:
       "class": "Prompts Summoner",
       "level": 1,
       "xp": 100,
-      "currentQuest": "Create AI Test Script",
+      "currentQuest": "Sync Gemini 3.1 Flash Live",
       "activePair": null,
       "inventory": [],
       "lastHandoff": "Marketplace UI refined with CreateModal and mock data.",
@@ -177,6 +177,26 @@ When a user types a `/myney-*` command:
       "xpReward": 150,
       "startedAt": "2026-05-04T20:51:00+08:00",
       "completedAt": "2026-05-04T20:53:00+08:00"
+    },
+    "q6": {
+      "id": "q6",
+      "title": "Research Gemini 3.1 Models",
+      "description": "Investigate available Gemini 3.1 models and their features.",
+      "status": "completed",
+      "owner": "moon",
+      "xpReward": 100,
+      "startedAt": "2026-05-04T21:05:00+08:00",
+      "completedAt": "2026-05-04T21:07:00+08:00"
+    },
+    "q7": {
+      "id": "q7",
+      "title": "Sync Gemini 3.1 Flash Live",
+      "description": "Attempt to switch to gemini-3.1-flash-live-preview for unlimited usage.",
+      "status": "in-progress",
+      "owner": "moon",
+      "xpReward": 100,
+      "startedAt": "2026-05-04T21:08:00+08:00",
+      "completedAt": null
     }
   },
   "reminders": {
@@ -232,6 +252,13 @@ When a user types a `/myney-*` command:
       "actor": "MYney",
       "kind": "tooling",
       "summary": "Created 'scripts/test-ai.ts' and added 'npm run test:ai' to verify Gemini connection."
+    },
+    {
+      "id": "gemini-31-live-sync",
+      "at": "2026-05-04T21:08:00+08:00",
+      "actor": "MYney",
+      "kind": "configuration",
+      "summary": "Updated .env to 'gemini-3.1-flash-live-preview' per user request. Connection test failed via REST API (v1beta); model may be WebSocket-only for Live API."
     }
   ],
   "todos": [],
