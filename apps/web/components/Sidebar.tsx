@@ -126,13 +126,12 @@ export const Sidebar = ({ isHidden, onHide }: { isHidden?: boolean, onHide?: () 
         </button>
       </div>
 
-      </div>
     </aside>
     <CreateModal 
       isOpen={isCreateModalOpen} 
       onClose={() => setIsCreateModalOpen(false)} 
       addComponent={(comp) => console.log('Component added:', comp)}
     />
-  </>
-);
+    </>
+  );
 };
