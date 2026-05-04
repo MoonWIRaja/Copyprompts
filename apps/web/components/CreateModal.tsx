@@ -179,40 +179,32 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
         }
       }
 
-      // Extraction logic v2 (Heuristic & Regex based)
-      let finalCode = accumulatedOutput;
-      
-      // 1. Remove all ANSI escape codes (colors, etc)
-      finalCode = finalCode.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '');
+      // Extraction logic v3 (Integration Guide Support)
+      let fullGuide = accumulatedOutput.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '');
+      let previewCode = '';
 
-      // 2. Try to find code between markdown fences first (most reliable)
-      const markdownMatch = finalCode.match(/```(?:jsx|tsx|javascript|js)?\s*([\s\S]*?)```/);
-      if (markdownMatch) {
-        finalCode = markdownMatch[1].trim();
+      // 1. Try to find 'demo.tsx' block first
+      const demoMatch = fullGuide.match(/```(?:jsx|tsx|javascript|js)?\s*demo\.tsx\s*([\s\S]*?)```/i);
+      
+      if (demoMatch) {
+        previewCode = demoMatch[1].trim();
       } else {
-        // 3. Fallback: Look for the component definition if bars are present
-        if (finalCode.includes('▀▀▀▀▀▀▀▀')) {
-          const parts = finalCode.split('▀▀▀▀▀▀▀▀');
-          for (const part of parts) {
-            if (part.includes('const ') && (part.includes('=>') || part.includes('return'))) {
-              finalCode = part.split('▄▄▄▄▄▄▄▄')[0].trim();
-              break;
-            }
-          }
+        // 2. Fallback: Find the largest code block
+        const allBlocks = fullGuide.match(/```(?:jsx|tsx|javascript|js)?\s*([\s\S]*?)```/g);
+        if (allBlocks) {
+          previewCode = allBlocks.reduce((a, b) => a.length > b.length ? a : b)
+            .replace(/```(?:jsx|tsx|javascript|js)?\s*/, '')
+            .replace(/```$/, '')
+            .trim();
         }
       }
 
-      // 4. Final safety strip for remaining markers
-      finalCode = finalCode
-        .replace(/^```(?:jsx|tsx|javascript|js|react)?\s*\n?/gm, '')
-        .replace(/```\s*$/gm, '')
-        .trim();
-
-      if (finalCode.length > 50) {
-        setManualCode(finalCode); // Update the editor with AI's result
+      if (previewCode.length > 50) {
+        setManualCode(previewCode); // Use the demo for the live preview editor
+        setGeneratedCode(fullGuide); // Save the FULL GUIDE for publishing
         setIsTested(true);
       } else {
-        throw new Error('AI failed to generate a valid component. Please try again.');
+        throw new Error('AI failed to generate a valid integration guide. Please try again.');
       }
     } catch (err: any) {
       console.error('Test Error:', err);
