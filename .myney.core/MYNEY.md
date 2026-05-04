@@ -392,6 +392,13 @@ When a user types a `/myney-*` command:
       "actor": "MYney",
       "kind": "configuration",
       "summary": "Synchronized GEMINI.md with the 'Auto' preference by setting the model to gemini-3.1-flash."
+    },
+    {
+      "id": "env-cleansing-cli",
+      "at": "2026-05-04T22:55:00+08:00",
+      "actor": "MYney",
+      "kind": "cleanup",
+      "summary": "Cleansed .env by deprecating the REST API key and explicitly setting the model to 'auto'. Synchronized the root .env with apps/web/.env."
     }
   ],
   "todos": [],
