@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   X, Copy, ChevronRight, Share, Bookmark, ExternalLink, 
   Sun, RotateCw, Code, Sparkles, Terminal, Send
@@ -14,7 +15,6 @@ interface CreateModalProps {
 
 const generatePreviewHtml = (code: string, componentName: string) => {
   const safeName = componentName.replace(/[^a-zA-Z0-9]/g, '') || 'GeneratedComponent';
-  // Strip any export/import statements that might have leaked
   const cleanCode = code
     .replace(/import\s+[\s\S]*?from\s+['"].*?['"];?/g, '')
     .replace(/export\s+default\s+/g, '')
@@ -46,28 +46,17 @@ const generatePreviewHtml = (code: string, componentName: string) => {
         <div id="root"></div>
         <script type="text/babel" data-presets="react,typescript">
           const { useState, useEffect, useRef, useMemo, useCallback } = React;
-          
           ${cleanCode}
-
-          const App: React.FC = () => {
+          const App = () => {
             try {
               const ComponentToRender = typeof ${safeName} !== 'undefined' ? ${safeName} : null;
-              
-              if (!ComponentToRender) {
-                return (
-                  <div style={{color: '#ef4444', padding: '20px', textAlign: 'center'}}>
-                    <strong>Error:</strong> Component "${safeName}" not found in code.
-                  </div>
-                );
-              }
-              // @ts-ignore
+              if (!ComponentToRender) return <div style={{color: '#ef4444'}}>Component not found.</div>;
               return <ComponentToRender />;
-            } catch (e: any) {
+            } catch (e) {
               return <div style={{color: '#ef4444'}}>{e.message}</div>;
             }
           };
-
-          const root = ReactDOM.createRoot(document.getElementById('root')!);
+          const root = ReactDOM.createRoot(document.getElementById('root'));
           root.render(<App />);
         </script>
       </body>
@@ -80,29 +69,13 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
   const [category, setCategory] = useState('ai-chats');
   const [manualCode, setManualCode] = useState(`interface MyComponentProps {
   title?: string;
-  description?: string;
 }
 
-const MyComponent: React.FC<MyComponentProps> = ({ 
-  title = "TypeScript Enabled", 
-  description = "This editor now supports full TSX syntax with Interfaces and Types." 
-}) => {
+const MyComponent: React.FC<MyComponentProps> = ({ title = "Modern TSX" }) => {
   return (
-    <div className="p-10 bg-white dark:bg-zinc-900 rounded-[2rem] shadow-2xl shadow-indigo-500/10 border border-zinc-100 dark:border-zinc-800 max-w-md">
-      <div className="w-12 h-12 bg-indigo-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-indigo-500/20">
-        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
-      </div>
-      <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
-        {title}
-      </h1>
-      <p className="mt-3 text-zinc-500 dark:text-zinc-400 leading-relaxed">
-        {description}
-      </p>
-      <button className="mt-8 w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-2xl transition-all active:scale-[0.98]">
-        Deploy TSX Component
-      </button>
+    <div className="p-8 bg-white dark:bg-zinc-900 rounded-3xl shadow-xl border border-zinc-100 dark:border-zinc-800">
+      <h1 className="text-2xl font-bold text-indigo-600">{title}</h1>
+      <p className="text-zinc-500 mt-2">Edit me manually or use AI.</p>
     </div>
   );
 };`);
@@ -111,6 +84,12 @@ const MyComponent: React.FC<MyComponentProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [streamingLogs, setStreamingLogs] = useState('');
   const terminalEndRef = useRef<HTMLPreElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   useEffect(() => {
     if (terminalEndRef.current) {
@@ -118,11 +97,10 @@ const MyComponent: React.FC<MyComponentProps> = ({
     }
   }, [streamingLogs]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const handleTest = async () => {
     if (!aiInstruction.trim()) return;
-    
     setIsGenerating(true);
     setStreamingLogs('');
     setIsTested(false);
@@ -153,25 +131,9 @@ const MyComponent: React.FC<MyComponentProps> = ({
         }
       }
 
-      // Extraction Logic v4
-      let fullGuide = accumulatedOutput.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '');
-      let previewCode = '';
-
-      const demoMatch = fullGuide.match(/```(?:jsx|tsx|javascript|js)?\s*demo\.tsx\s*([\s\S]*?)```/i);
+      const demoMatch = accumulatedOutput.match(/```(?:jsx|tsx|javascript|js)?\s*demo\.tsx\s*([\s\S]*?)```/i);
       if (demoMatch && demoMatch[1]) {
-        previewCode = demoMatch[1].trim();
-      } else {
-        const allBlocks = fullGuide.match(/```(?:jsx|tsx|javascript|js)?\s*([\s\S]*?)```/g);
-        if (allBlocks && allBlocks.length > 0) {
-          previewCode = Array.from(allBlocks).reduce((a, b) => a.length > b.length ? a : b)
-            .replace(/```(?:jsx|tsx|javascript|js)?\s*/, '')
-            .replace(/```$/, '')
-            .trim();
-        }
-      }
-
-      if (previewCode.length > 50) {
-        setManualCode(previewCode);
+        setManualCode(demoMatch[1].trim());
         setIsTested(true);
       }
     } catch (err: any) {
@@ -181,139 +143,66 @@ const MyComponent: React.FC<MyComponentProps> = ({
     }
   };
 
-  const handlePublish = () => {
-    addComponent({
-      name: name || 'MyComponent',
-      category,
-      prompt: aiInstruction,
-      code: manualCode,
-      previewUrl: 'https://cdn.21st.dev/bundled/209.html?theme=dark&dark=true',
-    });
-    window.dispatchEvent(new CustomEvent('refresh-marketplace'));
-    onSuccess?.();
-    onClose();
-  };
-
-  return (
+  const modalContent = (
     <div className="premium-modal-overlay" onClick={onClose}>
       <div className="premium-modal-container" onClick={(e) => e.stopPropagation()}>
-        {/* Modern Navbar */}
         <div className="premium-modal-nav">
           <div className="nav-left">
             <div className="brand-dot"></div>
-            <span className="brand-text">COPYPEOMPTS <span className="text-zinc-400">/ EDITOR</span></span>
+            <span className="brand-text">COPYPEOMPTS EDITOR</span>
           </div>
-          <div className="nav-right">
-            <button className="nav-icon-btn"><Share size={16}/></button>
-            <button className="nav-icon-btn"><Bookmark size={16}/></button>
-            <button className="nav-close-btn" onClick={onClose}><X size={20}/></button>
-          </div>
+          <button className="nav-close-btn" onClick={onClose}><X size={20}/></button>
         </div>
 
         <div className="premium-modal-body">
-          {/* Left: Preview Section */}
           <div className="preview-pane">
-            <div className="pane-header">
-              <div className="header-tabs">
-                <button className="tab-btn active">Live Preview</button>
-                <button className="tab-btn">Canvas</button>
-              </div>
-              <div className="header-actions">
-                <Sun size={14} className="text-zinc-400" />
-                <div className="zoom-level">100%</div>
-              </div>
-            </div>
-            
             <div className="preview-viewport">
-              <iframe 
-                srcDoc={generatePreviewHtml(manualCode, name || 'MyComponent')} 
-                title="Preview"
-                className="preview-iframe"
-              />
-              
+              <iframe srcDoc={generatePreviewHtml(manualCode, name || 'MyComponent')} className="preview-iframe" />
               {isGenerating && (
                 <div className="terminal-overlay">
                   <div className="terminal-window">
-                    <div className="terminal-header">
-                      <div className="terminal-dots">
-                        <span></span><span></span><span></span>
-                      </div>
-                      <span className="terminal-title">GEMINI ENGINE v4.0</span>
-                    </div>
-                    <pre ref={terminalEndRef} className="terminal-content">
-                      {streamingLogs || 'Booting AI Core...'}
-                    </pre>
+                    <pre ref={terminalEndRef} className="terminal-content">{streamingLogs}</pre>
                   </div>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Right: Editor & Control Pane */}
           <div className="control-pane">
             <div className="editor-section">
               <div className="section-header">
-                <div className="flex items-center gap-2">
-                  <Code size={14} className="text-indigo-500" />
-                  <span className="text-xs font-bold uppercase tracking-widest">JSX Editor</span>
-                </div>
-                <div className="editor-status">Manual Mode</div>
+                <span className="editor-status">TSX EDITOR</span>
               </div>
-              <textarea 
-                value={manualCode}
-                onChange={(e) => setManualCode(e.target.value)}
-                className="code-editor-textarea"
-                spellCheck={false}
-              />
+              <textarea value={manualCode} onChange={(e) => setManualCode(e.target.value)} className="code-editor-textarea" spellCheck={false} />
             </div>
 
             <div className="config-section">
               <div className="input-grid">
                 <div className="input-field">
-                  <label>Component Name</label>
-                  <input 
-                    type="text" 
-                    value={name} 
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. HeroSection"
-                  />
+                  <label>Name</label>
+                  <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Component Name" />
                 </div>
                 <div className="input-field">
                   <label>Category</label>
                   <select value={category} onChange={(e) => setCategory(e.target.value)}>
-                    <option value="hero">Hero Sections</option>
+                    <option value="hero">Hero</option>
                     <option value="navigation">Navigation</option>
                     <option value="ai-chats">AI Chats</option>
-                    <option value="cards">Cards</option>
                   </select>
                 </div>
               </div>
 
               <div className="ai-refinement-area">
                 <div className="ai-input-wrapper">
-                  <Sparkles size={18} className="ai-icon" />
-                  <input 
-                    type="text" 
-                    value={aiInstruction}
-                    onChange={(e) => setAiInstruction(e.target.value)}
-                    placeholder="Ask AI to refine code (e.g. 'Add a hover animation')"
-                  />
-                  <button 
-                    onClick={handleTest} 
-                    disabled={isGenerating}
-                    className="refine-btn"
-                  >
+                  <input type="text" value={aiInstruction} onChange={(e) => setAiInstruction(e.target.value)} placeholder="AI Instruction..." />
+                  <button onClick={handleTest} disabled={isGenerating} className="refine-btn">
                     {isGenerating ? <RotateCw className="animate-spin" size={18} /> : <Send size={18} />}
                   </button>
                 </div>
               </div>
 
-              <button 
-                onClick={handlePublish}
-                disabled={!isTested || isGenerating}
-                className="publish-action-btn"
-              >
-                PUBLISH TO MARKETPLACE
+              <button onClick={() => { addComponent({ name, code: manualCode }); onClose(); }} disabled={!isTested} className="publish-action-btn">
+                PUBLISH
               </button>
             </div>
           </div>
@@ -321,4 +210,6 @@ const MyComponent: React.FC<MyComponentProps> = ({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
