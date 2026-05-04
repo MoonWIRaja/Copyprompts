@@ -108,7 +108,7 @@ When a user types a `/myney-*` command:
       "class": "Prompts Summoner",
       "level": 1,
       "xp": 100,
-      "currentQuest": "Sync Gemini 3.1 Flash Live",
+      "currentQuest": "Finalize Stable AI Model",
       "activePair": null,
       "inventory": [],
       "lastHandoff": "Marketplace UI refined with CreateModal and mock data.",
@@ -190,13 +190,13 @@ When a user types a `/myney-*` command:
     },
     "q7": {
       "id": "q7",
-      "title": "Sync Gemini 3.1 Flash Live",
-      "description": "Attempt to switch to gemini-3.1-flash-live-preview for unlimited usage.",
-      "status": "in-progress",
+      "title": "Finalize Stable AI Model",
+      "description": "Switch to a stable working Gemini 3.1 model after live-preview failure.",
+      "status": "completed",
       "owner": "moon",
       "xpReward": 100,
       "startedAt": "2026-05-04T21:08:00+08:00",
-      "completedAt": null
+      "completedAt": "2026-05-04T21:11:00+08:00"
     }
   },
   "reminders": {
@@ -259,6 +259,13 @@ When a user types a `/myney-*` command:
       "actor": "MYney",
       "kind": "configuration",
       "summary": "Updated .env to 'gemini-3.1-flash-live-preview' per user request. Connection test failed via REST API (v1beta); model may be WebSocket-only for Live API."
+    },
+    {
+      "id": "gemini-31-lite-sync",
+      "at": "2026-05-04T21:11:00+08:00",
+      "actor": "MYney",
+      "kind": "configuration",
+      "summary": "Finalized AI model to 'gemini-3.1-flash-lite-preview'. Verified connection via bun test:ai. Model is stable and ready for Marketplace generation."
     }
   ],
   "todos": [],
