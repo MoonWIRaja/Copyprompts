@@ -108,7 +108,7 @@ When a user types a `/myney-*` command:
       "class": "Prompts Summoner",
       "level": 1,
       "xp": 100,
-      "currentQuest": "Finalize Stable AI Model",
+      "currentQuest": "Fix Web API Env",
       "activePair": null,
       "inventory": [],
       "lastHandoff": "Marketplace UI refined with CreateModal and mock data.",
@@ -197,6 +197,16 @@ When a user types a `/myney-*` command:
       "xpReward": 100,
       "startedAt": "2026-05-04T21:08:00+08:00",
       "completedAt": "2026-05-04T21:11:00+08:00"
+    },
+    "q8": {
+      "id": "q8",
+      "title": "Fix Web API Env",
+      "description": "Ensure apps/web picks up the GEMINI_API_KEY from .env.",
+      "status": "completed",
+      "owner": "moon",
+      "xpReward": 50,
+      "startedAt": "2026-05-04T21:13:00+08:00",
+      "completedAt": "2026-05-04T21:14:00+08:00"
     }
   },
   "reminders": {
@@ -266,6 +276,13 @@ When a user types a `/myney-*` command:
       "actor": "MYney",
       "kind": "configuration",
       "summary": "Finalized AI model to 'gemini-3.1-flash-lite-preview'. Verified connection via bun test:ai. Model is stable and ready for Marketplace generation."
+    },
+    {
+      "id": "web-env-fix",
+      "at": "2026-05-04T21:14:00+08:00",
+      "actor": "MYney",
+      "kind": "bugfix",
+      "summary": "Copied root .env to apps/web/.env to ensure Next.js API routes can access the GEMINI_API_KEY."
     }
   ],
   "todos": [],
