@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     - Return ONLY raw code.`;
 
   const binPath = '/opt/nodejs/bin/gemini';
-  const args = ['--model', 'auto', '-p', fullPrompt];
+  const args = ['--model', 'gemini-1.5-flash', '-p', fullPrompt];
 
   const encoder = new TextEncoder();
 
