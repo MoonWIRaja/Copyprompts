@@ -21,6 +21,7 @@ export const Sidebar = ({ isHidden, onHide }: { isHidden?: boolean, onHide?: () 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   return (
+    <>
     <aside className={`sidebar ${isHidden ? 'hidden' : ''}`}>
       <div className="sidebar-header">
         <div className="logo-container">
@@ -125,10 +126,13 @@ export const Sidebar = ({ isHidden, onHide }: { isHidden?: boolean, onHide?: () 
         </button>
       </div>
 
-      <CreateModal 
-        isOpen={isCreateModalOpen} 
-        onClose={() => setIsCreateModalOpen(false)} 
-      />
+      </div>
     </aside>
-  );
+    <CreateModal 
+      isOpen={isCreateModalOpen} 
+      onClose={() => setIsCreateModalOpen(false)} 
+      addComponent={(comp) => console.log('Component added:', comp)}
+    />
+  </>
+);
 };
