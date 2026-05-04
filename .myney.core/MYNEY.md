@@ -108,7 +108,7 @@ When a user types a `/myney-*` command:
       "class": "Prompts Summoner",
       "level": 1,
       "xp": 100,
-      "currentQuest": "Fix Babel TSX Error",
+      "currentQuest": "Fix All Preview Errors",
       "activePair": null,
       "inventory": [],
       "lastHandoff": "Marketplace UI refined with CreateModal and mock data.",
@@ -237,6 +237,16 @@ When a user types a `/myney-*` command:
       "xpReward": 150,
       "startedAt": "2026-05-04T21:27:00+08:00",
       "completedAt": "2026-05-04T21:30:00+08:00"
+    },
+    "q12": {
+      "id": "q12",
+      "title": "Fix All Preview Errors",
+      "description": "Eliminate TypeScript errors by rewriting AI prompt for plain JSX and adding aggressive TS-stripping.",
+      "status": "completed",
+      "owner": "moon",
+      "xpReward": 200,
+      "startedAt": "2026-05-04T21:30:00+08:00",
+      "completedAt": "2026-05-04T21:34:00+08:00"
     }
   },
   "reminders": {
@@ -334,6 +344,13 @@ When a user types a `/myney-*` command:
       "actor": "MYney",
       "kind": "bugfix",
       "summary": "Fixed SyntaxError in visual preview by enabling 'typescript' preset in Babel Standalone. Restored generatePreviewHtml function integrity."
+    },
+    {
+      "id": "complete-preview-fix",
+      "at": "2026-05-04T21:34:00+08:00",
+      "actor": "MYney",
+      "kind": "bugfix",
+      "summary": "Rewrote AI prompt for plain JSX, added TypeScript stripping in preview, used React.createElement for mounting, switched to production React builds to suppress warnings."
     }
   ],
   "todos": [],

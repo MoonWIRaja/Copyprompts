@@ -21,51 +21,73 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
   if (!isOpen) return null;
 
   const generatePreviewHtml = (code: string, componentName: string) => {
-    // Clean code: remove imports which don't work in simple browser Babel
+    const safeName = componentName.replace(/\s+/g, '');
+    
+    // Aggressively clean code for browser-safe JSX
     const cleanedCode = code
-      .replace(/import\s+.*?\s+from\s+['"].*?['"];?/g, '')
-      .replace(/export\s+default\s+/, 'const GeneratedComponent = ')
-      .replace(/export\s+/, '');
+      // Remove all import statements
+      .replace(/import\s+[\s\S]*?\s+from\s+['"].*?['"];?/g, '')
+      .replace(/import\s+['"].*?['"];?/g, '')
+      // Remove export statements
+      .replace(/export\s+default\s+/, `const GeneratedComponent = `)
+      .replace(/export\s+(?:const|function|class)\s+/g, 'const ')
+      .replace(/export\s+/g, '')
+      // Strip TypeScript: interfaces, types, enums
+      .replace(/\b(interface|type|enum)\s+\w+[\s\S]*?\{[\s\S]*?\}/g, '')
+      // Strip generic type params from function calls like React.forwardRef<Type, Type>
+      .replace(/React\.forwardRef\s*<[^>]*>/g, 'React.forwardRef')
+      .replace(/React\.FC\s*<[^>]*>/g, '')
+      .replace(/React\.ComponentProps\s*<[^>]*>/g, 'any')
+      // Strip type annotations ": Type" from params and variables
+      .replace(/:\s*React\.\w+(?:<[^>]*>)?/g, '')
+      .replace(/:\s*\w+(?:\[\])?\s*(?=[,\)\}=;])/g, '')
+      // Strip "as Type" assertions
+      .replace(/\s+as\s+\w+(?:<[^>]*>)?/g, '')
+      .trim();
 
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <script src="https://cdn.tailwindcss.com"></script>
-        <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-        <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-        <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-        <script src="https://unpkg.com/lucide-react@latest/dist/umd/lucide-react.js"></script>
-        <style>
-          body { background-color: #000; color: #fff; margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: sans-serif; overflow: auto; padding: 20px; }
-          #root { width: 100%; display: flex; align-items: center; justify-content: center; }
-        </style>
-      </head>
-      <body>
-        <div id="root"></div>
-        <script type="text/babel" data-presets="react,typescript">
-          // Expose all Lucide icons to the global scope for the generated code
-          const { ...Icons } = LucideReact;
-          Object.assign(window, Icons);
-          
-          ${cleanedCode}
-          
-          // Heuristic to find the component to render
-          const App = typeof GeneratedComponent !== 'undefined' ? GeneratedComponent : 
-                      (typeof ${componentName.replace(/\s+/g, '')} !== 'undefined' ? ${componentName.replace(/\s+/g, '')} : 
-                      () => <div className="text-red-500 p-4 border border-red-500 rounded">
-                              Preview Error: Component "${componentName}" not found. 
-                              Make sure it's exported or matches the name.
-                            </div>);
+    return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"><\/script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\/script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script>
+  <script src="https://unpkg.com/lucide-react@latest/dist/umd/lucide-react.js"><\/script>
+  <style>
+    * { box-sizing: border-box; }
+    body { background: #09090b; color: #fafafa; margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: system-ui, -apple-system, sans-serif; padding: 24px; }
+    #root { width: 100%; max-width: 800px; }
+  </style>
+</head>
+<body>
+  <div id="root"><div style="color:#666;text-align:center">Loading preview...</div></div>
+  <script type="text/babel" data-presets="react">
+    // Make all Lucide icons available
+    try { Object.assign(window, LucideReact); } catch(e) {}
+    
+    // Helper: cn utility
+    const cn = (...classes) => classes.filter(Boolean).join(' ');
 
-          const root = ReactDOM.createRoot(document.getElementById('root'));
-          root.render(<App />);
-        </script>
-      </body>
-      </html>
-    `;
+    try {
+      ${cleanedCode}
+      
+      const _Comp = typeof GeneratedComponent !== 'undefined' ? GeneratedComponent
+                   : typeof ${safeName} !== 'undefined' ? ${safeName}
+                   : null;
+      
+      if (_Comp) {
+        ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(_Comp));
+      } else {
+        document.getElementById('root').innerHTML = '<div style="color:#ef4444;padding:16px;border:1px solid #ef4444;border-radius:8px">Component not found. Try a different name.</div>';
+      }
+    } catch(err) {
+      document.getElementById('root').innerHTML = '<div style="color:#ef4444;padding:16px;border:1px solid #ef4444;border-radius:8px">Render error: ' + err.message + '</div>';
+    }
+  <\/script>
+</body>
+</html>`;
   };
 
   const handleTest = async () => {
