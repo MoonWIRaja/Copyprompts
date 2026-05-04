@@ -14,6 +14,7 @@ interface CreateModalProps {
 
 const generatePreviewHtml = (code: string, componentName: string) => {
   const safeName = componentName.replace(/[^a-zA-Z0-9]/g, '') || 'GeneratedComponent';
+  
   const cleanCode = code
     .replace(/import\s+[\s\S]*?from\s+['"].*?['"];?/g, '')
     .replace(/export\s+default\s+/g, '')
@@ -37,29 +38,41 @@ const generatePreviewHtml = (code: string, componentName: string) => {
         <script type="text/babel" data-presets="react,typescript">
           const { useState, useEffect, useRef, useMemo, useCallback, createContext, useContext } = React;
           
-          // Mocks
-          const toast = (msg) => alert("Toast: " + msg);
-          const Button = ({ children, className, ...props }) => <button className={"px-4 py-2 bg-black text-white rounded " + className} {...props}>{children}</button>;
-          const Textarea = (props) => <textarea className="border p-2 w-full rounded" {...props} />;
-          const ArrowUpIcon = () => <span>↑</span>;
+          // --- BULLETPROOF MOCKING ---
+          const toast = (msg) => console.log("Toast:", msg);
+          const LucideIcons = new Proxy({}, { get: () => () => <span>Icon</span> });
           
+          // Provide basic UI mocks if missing
+          const Button = window.Button || (({children, ...p}) => <button className="px-3 py-1 bg-black text-white rounded" {...p}>{children}</button>);
+          const Textarea = window.Textarea || ((p) => <textarea className="border rounded p-2" {...p} />);
+          
+          // --- MERGED CODE ---
           ${cleanCode}
 
+          // --- SMART RENDERER ---
           const App = () => {
             try {
+              // Priority 1: Use the name in the input field
               let ComponentToRender = null;
-              try { ComponentToRender = window['${safeName}'] || eval('${safeName}'); } catch(e) {}
+              try { ComponentToRender = eval('${safeName}'); } catch(e) {}
               
+              // Priority 2: Look for anything ending in "Demo"
               if (!ComponentToRender) {
-                // Fallback: search window for last uppercase defined object
-                const keys = Object.keys(window).filter(k => /^[A-Z]/.test(k) && typeof window[k] === 'function');
+                const demoKey = Object.keys(window).find(k => k.endsWith('Demo') && typeof window[k] === 'function');
+                if (demoKey) ComponentToRender = window[demoKey];
+              }
+
+              // Priority 3: Last defined uppercase component
+              if (!ComponentToRender) {
+                const keys = Object.keys(window).filter(k => /^[A-Z]/.test(k) && typeof window[k] === 'function' && k !== 'App');
                 if (keys.length > 0) ComponentToRender = window[keys[keys.length - 1]];
               }
 
-              if (!ComponentToRender) return <div className="text-red-500">Component "${safeName}" not found.</div>;
+              if (!ComponentToRender) return <div className="p-4 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded">No component detected. Ensure your code defines a React component.</div>;
+              
               return <ComponentToRender />;
             } catch (e) {
-              return <div className="text-red-500">Runtime Error: {e.message}</div>;
+              return <div className="p-4 bg-red-50 text-red-700 border border-red-200 rounded">Runtime Error: {e.message}</div>;
             }
           };
 
@@ -87,18 +100,11 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
     return () => setMounted(false);
   }, []);
 
-  // --- AUTO-NAME-SYNC ENGINE ---
+  // Auto-Sync Name
   useEffect(() => {
     if (!manualCode) return;
-    
-    // Scan for the main component name
-    const match = manualCode.match(/const\s+([A-Z][a-zA-Z0-9]+)|function\s+([A-Z][a-zA-Z0-9]+)/);
-    if (match) {
-      const detectedName = match[1] || match[2];
-      if (detectedName && detectedName !== name) {
-        setName(detectedName);
-      }
-    }
+    const match = manualCode.match(/(?:const|function)\s+([A-Z][a-zA-Z0-9]+)/);
+    if (match && match[1] && match[1] !== name) setName(match[1]);
   }, [manualCode]);
 
   useEffect(() => {
@@ -141,13 +147,22 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
         }
       }
 
-      const demoMatch = accumulatedOutput.match(/```(?:jsx|tsx|javascript|js)?\s*demo\.tsx\s*([\s\S]*?)```/i);
-      const componentMatch = accumulatedOutput.match(/```(?:jsx|tsx|javascript|js)?\s*[a-z-]+\.tsx\s*([\s\S]*?)```/i);
-      const finalCode = (demoMatch ? demoMatch[1] : (componentMatch ? componentMatch[1] : null))?.trim();
+      // Extraction v6: JOIN ALL TSX BLOCKS
+      const blocks = accumulatedOutput.match(/```(?:jsx|tsx|javascript|js)?\s*[\w.-]+\.tsx\s*([\s\S]*?)```/gi) || [];
+      const mergedCode = blocks.map(block => {
+        return block.replace(/```(?:jsx|tsx|javascript|js)?\s*[\w.-]+\.tsx\s*/i, '').replace(/```$/, '').trim();
+      }).join('\n\n');
       
-      if (finalCode) {
-        setManualCode(finalCode);
+      if (mergedCode) {
+        setManualCode(mergedCode);
         setIsTested(true);
+      } else {
+        // Fallback to simple extraction if named blocks aren't found
+        const simpleBlocks = accumulatedOutput.match(/```(?:jsx|tsx|javascript|js)?\s*([\s\S]*?)```/g);
+        if (simpleBlocks) {
+          setManualCode(simpleBlocks.map(b => b.replace(/```[\s\S]*?\n/, '').replace(/```$/, '')).join('\n\n'));
+          setIsTested(true);
+        }
       }
     } catch (err: any) {
       alert(`Error: ${err.message}`);
@@ -184,7 +199,7 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
           <div className="control-pane">
             <div className="editor-section">
               <div className="section-header">
-                <span className="editor-status">TSX EDITOR</span>
+                <span className="editor-status">TSX MULTI-BLOCK</span>
               </div>
               <textarea value={manualCode} onChange={(e) => setManualCode(e.target.value)} className="code-editor-textarea" spellCheck={false} placeholder="Paste your code here..." />
             </div>
@@ -192,14 +207,13 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
             <div className="config-section">
               <div className="input-grid">
                 <div className="input-field">
-                  <label>Name (Auto-Detected)</label>
-                  <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Detected Name..." />
+                  <label>Name</label>
+                  <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Detected..." />
                 </div>
                 <div className="input-field">
                   <label>Category</label>
                   <select value={category} onChange={(e) => setCategory(e.target.value)}>
                     <option value="hero">Hero</option>
-                    <option value="navigation">Navigation</option>
                     <option value="ai-chats">AI Chats</option>
                   </select>
                 </div>
@@ -207,7 +221,7 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
 
               <div className="ai-refinement-area">
                 <div className="ai-input-wrapper">
-                  <input type="text" value={aiInstruction} onChange={(e) => setAiInstruction(e.target.value)} placeholder="AI refinement instructions..." />
+                  <input type="text" value={aiInstruction} onChange={(e) => setAiInstruction(e.target.value)} placeholder="Refine code..." />
                   <button onClick={handleTest} disabled={isGenerating} className="refine-btn">
                     {isGenerating ? <RotateCw className="animate-spin" size={18} /> : <Send size={18} />}
                   </button>
