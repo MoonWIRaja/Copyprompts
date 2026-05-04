@@ -49,6 +49,7 @@ entries live here.
 - **Pair Sync** (`/myney-pair`) - Maintains cross-consistent pair state between two members.
 - **Invite Gate** (`/myney-invite`) - Lets the owner control team activation with invite codes.
 - **Agent Protocols** (`/myney-agent`) - Lists and explains MYney, Lumina, Nara, Kaizen, Riven, Vega, and Echo.
+- **Auto-Sync Ritual** (`/myney-autosync`) - Automates Quest -> Build -> Memory -> GitHub Push flow.
 - **Integrity Check** (`/myney-check`) - Validates the single-file state, classes, skills, members, pairs, and todos.
 
 ## RPG Coding Classes
@@ -107,7 +108,7 @@ When a user types a `/myney-*` command:
       "class": "Prompts Summoner",
       "level": 1,
       "xp": 100,
-      "currentQuest": "Build Marketplace UI",
+      "currentQuest": "Implement Auto-Sync Ritual",
       "activePair": null,
       "inventory": [],
       "lastHandoff": "Marketplace UI refined with CreateModal and mock data.",
@@ -131,11 +132,21 @@ When a user types a `/myney-*` command:
       "id": "q1",
       "title": "Build Marketplace UI",
       "description": "Create a premium marketplace interface for Copyprompts.",
-      "status": "in-progress",
+      "status": "completed",
       "owner": "moon",
       "xpReward": 500,
       "startedAt": "2026-05-04T15:00:00+08:00",
-      "completedAt": null
+      "completedAt": "2026-05-04T20:40:00+08:00"
+    },
+    "q2": {
+      "id": "q2",
+      "title": "Implement Auto-Sync Ritual",
+      "description": "Install and activate the Auto-Sync Ritual skill for automated Git workflow.",
+      "status": "completed",
+      "owner": "moon",
+      "xpReward": 200,
+      "startedAt": "2026-05-04T20:38:00+08:00",
+      "completedAt": "2026-05-04T20:42:00+08:00"
     }
   },
   "reminders": {
@@ -163,6 +174,13 @@ When a user types a `/myney-*` command:
       "actor": "MYney",
       "kind": "deploy",
       "summary": "Initialized git, committed all files, created public GitHub repository 'MoonWIRaja/Copyprompts', and pushed the initial build."
+    },
+    {
+      "id": "autosync-skill",
+      "at": "2026-05-04T20:42:00+08:00",
+      "actor": "MYney",
+      "kind": "skill-install",
+      "summary": "Successfully installed 'Auto-Sync Ritual'. From now on, every major instruction will trigger a Quest -> Build -> Memory -> Push cycle."
     }
   ],
   "todos": [],
@@ -172,6 +190,12 @@ When a user types a `/myney-*` command:
       "kind": "setup",
       "actor": "system",
       "message": "Initialized solo project by Moon (Prompts Summoner)"
+    },
+    {
+      "at": "2026-05-04T20:38:00+08:00",
+      "kind": "skill-install",
+      "actor": "MYney",
+      "message": "Installed 'Auto-Sync Ritual' skill for automated workflow."
     }
   ],
   "agents": [
@@ -282,6 +306,11 @@ When a user types a `/myney-*` command:
       "purpose": "Add, list, and complete persistent MemoryCore todos."
     },
     {
+      "command": "/myney-autosync",
+      "file": "autosync.md",
+      "purpose": "Automate Quest -> Build -> Memory -> GitHub Push flow."
+    },
+    {
       "command": "/myney-check",
       "file": "check.md",
       "purpose": "Validate required MemoryCore files and consistency."
@@ -327,6 +356,11 @@ When a user types a `/myney-*` command:
       "name": "Agent Protocols",
       "trigger": "/myney-agent",
       "purpose": "Lists and explains MYney, Lumina, Nara, Kaizen, Riven, Vega, and Echo."
+    },
+    {
+      "name": "Auto-Sync Ritual",
+      "trigger": "/myney-autosync",
+      "purpose": "Automates Quest -> Build -> Memory -> GitHub Push flow."
     },
     {
       "name": "Integrity Check",
