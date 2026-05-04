@@ -413,12 +413,14 @@
 .terminal-body {
   flex: 1;
   padding: 15px;
-  color: #00ff41; /* Classic Terminal Green */
+  color: #00ff41; 
   font-size: 13px;
   line-height: 1.5;
   overflow-y: auto;
+  max-height: 450px; /* Force a scrollable height */
   white-space: pre-wrap;
   word-break: break-all;
+  background: #000;
 }
 
 .terminal-body::-webkit-scrollbar {
