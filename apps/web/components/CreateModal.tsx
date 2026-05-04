@@ -191,8 +191,8 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
       } else {
         // 2. Fallback: Find the largest code block
         const allBlocks = fullGuide.match(/```(?:jsx|tsx|javascript|js)?\s*([\s\S]*?)```/g);
-        if (allBlocks) {
-          previewCode = allBlocks.reduce((a, b) => a.length > b.length ? a : b)
+        if (allBlocks && allBlocks.length > 0) {
+          previewCode = Array.from(allBlocks).reduce((a, b) => a.length > b.length ? a : b)
             .replace(/```(?:jsx|tsx|javascript|js)?\s*/, '')
             .replace(/```$/, '')
             .trim();
@@ -221,7 +221,7 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
     addComponent({
       name,
       category,
-      prompt,
+      prompt: aiInstruction,
       code: generatedCode,
       previewUrl: 'https://cdn.21st.dev/bundled/209.html?theme=dark&dark=true', // Mock preview
     });
@@ -234,7 +234,7 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
     // Reset form
     setName('');
     setCategory('');
-    setPrompt('');
+    setAiInstruction('');
     setIsTested(false);
   };
 
@@ -358,18 +358,17 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
                   </select>
                 </div>
 
-                <div className="form-group">
-                  <label>Prompts</label>
+                <div className="form-group flex-1 flex flex-col min-h-0">
+                  <label className="flex justify-between items-center">
+                    JSX Editor
+                    <span className="text-[10px] bg-indigo-500/10 text-indigo-500 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Manual Edit</span>
+                  </label>
                   <textarea 
-                    placeholder="Paste your prompts here..." 
-                    className="form-textarea" 
-                    rows={10}
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    className="flex-1 font-mono text-sm leading-relaxed bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 focus:ring-indigo-500/20"
+                    className="flex-1 font-mono text-sm leading-relaxed bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 focus:ring-indigo-500/20 p-4"
                     value={manualCode}
                     onChange={(e) => setManualCode(e.target.value)}
                     placeholder="Write your JSX here..."
+                    rows={12}
                   />
                 </div>
 
