@@ -1,5 +1,5 @@
-import React from 'react';
-import { X, ChevronLeft, ChevronRight, RotateCw, Bookmark, Share, Moon, Sun, Copy, ExternalLink, Check } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, ChevronLeft, ChevronRight, RotateCw, Bookmark, Share, Moon, Sun, Copy, ExternalLink, Check, Code } from 'lucide-react';
 import { getComponents, addComponent } from '../lib/data';
 import './create-modal.css';
 
@@ -15,12 +15,14 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
   const [prompt, setPrompt] = React.useState('');
   const [isTested, setIsTested] = React.useState(false);
   const [isTesting, setIsTesting] = React.useState(false);
-  const [generatedCode, setGeneratedCode] = React.useState('');
+  const [generatedCode, setGeneratedCode] = useState('');
+  const [streamingLogs, setStreamingLogs] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
   const [previewUrl, setPreviewUrl] = React.useState('');
 
   if (!isOpen) return null;
 
-  const generatePreviewHtml = (code: string, componentName: string) => {
+  const generatePreviewHtml = (code: string, componentName: string = 'GeneratedComponent') => {
     const safeName = componentName.replace(/\s+/g, '');
     
     // Aggressively clean code for browser-safe JSX
@@ -123,42 +125,74 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
     }
     setIsTesting(true);
     setIsTested(false);
-    setGeneratedCode('');
-    setPreviewUrl('');
-
     try {
+      setIsGenerating(true);
+      setGeneratedCode('');
+      setStreamingLogs('');
+      
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, category, prompt }),
+        body: JSON.stringify({
+          prompt: prompt,
+          name: name,
+          category: category
+        }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
+        const data = await response.json();
         throw new Error(data.error || 'Failed to generate component');
       }
 
-      // Reject if the model returned prose instead of code
-      const looksLikeCode = /(?:const|function|=>)\s/.test(data.code) &&
-        (/<[A-Za-z][\s/>]/.test(data.code) || data.code.includes('return'));
-      if (!looksLikeCode) {
-        throw new Error('The AI returned an explanation instead of code. Please try again with a more specific prompt.');
+      // Read the stream
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedOutput = '';
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          const chunk = decoder.decode(value, { stream: true });
+          accumulatedOutput += chunk;
+          
+          // Update logs for the user to see "CLI running"
+          setStreamingLogs(prev => prev + chunk);
+        }
       }
 
-      setGeneratedCode(data.code);
-
-      // Create Blob URL for visual preview
-      const html = generatePreviewHtml(data.code, name);
-      const blob = new Blob([html], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      setPreviewUrl(url);
+      // Extraction logic (Same as before but on the accumulated output)
+      let finalCode = accumulatedOutput;
       
+      // Cleanup ANSI
+      finalCode = finalCode.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '');
+      
+      if (finalCode.includes('▀▀▀▀▀▀▀▀')) {
+        const parts = finalCode.split('▀▀▀▀▀▀▀▀');
+        for (const part of parts) {
+          if (part.includes('const ') || part.includes('React.')) {
+            const splitPart = part.split('▄▄▄▄▄▄▄▄');
+            finalCode = splitPart[0]?.trim() || '';
+            break;
+          }
+        }
+      }
+
+      // Final safety strip for markdown fences
+      finalCode = finalCode
+        .replace(/^```(?:jsx|tsx|javascript|js|react)?\s*\n?/gm, '')
+        .replace(/```\s*$/gm, '')
+        .trim();
+
+      setGeneratedCode(finalCode);
       setIsTested(true);
-    } catch (error: any) {
-      console.error('Test Error:', error);
-      alert(`Error: ${error.message}`);
+    } catch (err: any) {
+      console.error('Test Error:', err);
+      alert(`Error: ${err.message}`);
     } finally {
+      setIsGenerating(false);
       setIsTesting(false);
     }
   };
@@ -223,33 +257,36 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
         <div className="modal-content">
           <div className="modal-body-split">
             <div className="modal-left-pane">
-              <div className="modal-dotted-bg" />
-              {isTesting ? (
-                <div className="preview-loading">
-                  <RotateCw className="animate-spin" size={32} />
-                  <span>Summoning Visual Results...</span>
+                <div className="preview-content">
+                  {isGenerating && (
+                    <div className="streaming-logs">
+                      <div className="terminal-header">
+                        <span className="dot red"></span>
+                        <span className="dot yellow"></span>
+                        <span className="dot green"></span>
+                        <span className="terminal-title">Gemini CLI Output</span>
+                      </div>
+                      <pre className="terminal-body">
+                        {streamingLogs || 'Establishing connection to Gemini CLI...'}
+                      </pre>
+                    </div>
+                  )}
+                  {generatedCode ? (
+                    <iframe
+                      srcDoc={generatePreviewHtml(generatedCode, name)}
+                      className="visual-preview-iframe"
+                      title="Component Preview"
+                    />
+                  ) : !isGenerating && (
+                    <div className="preview-placeholder">
+                      <div className="placeholder-icon">
+                        <Code size={48} />
+                      </div>
+                      <h3>No Preview Yet</h3>
+                      <p>Enter a prompt and click "Test" to generate and preview your component.</p>
+                    </div>
+                  )}
                 </div>
-              ) : isTested && previewUrl ? (
-                <div className="visual-preview-container">
-                  <iframe 
-                    src={previewUrl} 
-                    title="Component Visual Preview"
-                    className="visual-preview-iframe"
-                  />
-                  <div className="preview-overlay-actions">
-                    <button className="code-copy-btn" onClick={() => navigator.clipboard.writeText(generatedCode)}>
-                      <Copy size={12} />
-                      View Code
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="preview-placeholder">
-                  <div className="placeholder-content">
-                    <p>Enter prompts and click <strong>Test</strong> to see the visual result.</p>
-                  </div>
-                </div>
-              )}
             </div>
             <div className="modal-right-pane">
               <div className="modal-form">

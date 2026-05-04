@@ -361,19 +361,80 @@
   to { transform: rotate(360deg); }
 }
 
-.visual-preview-container {
+.preview-content {
+  position: relative;
   width: 100%;
   height: 100%;
-  position: relative;
-  z-index: 2;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
+}
+
+.streaming-logs {
+  flex: 1;
+  background: #0a0a0a;
+  border: 1px solid #222;
+  border-radius: 8px;
+  margin: 10px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  font-family: 'Fira Code', 'Courier New', Courier, monospace;
+}
+
+.terminal-header {
+  height: 32px;
+  background: #1a1a1a;
+  border-bottom: 1px solid #222;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 6px;
+}
+
+.terminal-title {
+  margin-left: 10px;
+  font-size: 11px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.dot.red { background: #ff5f56; }
+.dot.yellow { background: #ffbd2e; }
+.dot.green { background: #27c93f; }
+
+.terminal-body {
+  flex: 1;
+  padding: 15px;
+  color: #00ff41; /* Classic Terminal Green */
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.terminal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.terminal-body::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 3px;
 }
 
 .visual-preview-iframe {
   width: 100%;
   height: 100%;
   border: none;
-  background-color: #000;
+  background: white;
 }
 
 .preview-overlay-actions {
@@ -420,4 +481,3 @@
   line-height: 1.6;
   max-width: 250px;
 }
-
