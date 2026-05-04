@@ -108,7 +108,7 @@ When a user types a `/myney-*` command:
       "class": "Prompts Summoner",
       "level": 1,
       "xp": 100,
-      "currentQuest": "Add API Retry + Fallback",
+      "currentQuest": "Marketplace Final Polish",
       "activePair": null,
       "inventory": [],
       "lastHandoff": "Marketplace UI refined with CreateModal and mock data.",
@@ -257,6 +257,16 @@ When a user types a `/myney-*` command:
       "xpReward": 200,
       "startedAt": "2026-05-04T21:33:00+08:00",
       "completedAt": "2026-05-04T21:36:00+08:00"
+    },
+    "q14": {
+      "id": "q14",
+      "title": "Integrate Gemini CLI",
+      "description": "Switch from REST API to authenticated Gemini CLI for unlimited generation and model-auto selection.",
+      "status": "completed",
+      "owner": "moon",
+      "xpReward": 500,
+      "startedAt": "2026-05-04T22:45:00+08:00",
+      "completedAt": "2026-05-04T22:52:00+08:00"
     }
   },
   "reminders": {
@@ -368,6 +378,13 @@ When a user types a `/myney-*` command:
       "actor": "MYney",
       "kind": "resilience",
       "summary": "Added 3-retry with backoff + fallback model (gemini-2.0-flash) to API route. Switched primary model to gemini-2.5-flash (GA, stable)."
+    },
+    {
+      "id": "gemini-cli-bridge",
+      "at": "2026-05-04T22:52:00+08:00",
+      "actor": "MYney",
+      "kind": "architecture",
+      "summary": "Replaced REST API generation with a local Gemini CLI bridge. Uses '--model auto' to leverage Google One AI Pro features and bypass REST quota limits."
     }
   ],
   "todos": [],

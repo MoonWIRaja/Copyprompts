@@ -43,7 +43,33 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
       .replace(/:\s*\w+(?:\[\])?\s*(?=[,\)\}=;])/g, '')
       // Strip "as Type" assertions
       .replace(/\s+as\s+\w+(?:<[^>]*>)?/g, '')
+      // Strip markdown bullet prefix (* or -) from every line
+      // Gemma wraps entire code responses in "* " bullet formatting
+      .split('\n').map(l => l.replace(/^\s*[*\-]\s+/, '')).join('\n')
+      // Strip block comments
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      // Collapse multiline regular-quoted strings (e.g. long Tailwind classNames)
+      .replace(/"[^"\\]*(?:\\.[^"\\]*)*"/gs, m => m.replace(/\n\s*/g, ' '))
+      .replace(/'[^'\\]*(?:\\.[^'\\]*)*'/gs, m => m.replace(/\n\s*/g, ' '))
       .trim();
+
+    // Strip preamble and trailing thinking text
+    const codeLines = cleanedCode.split('\n');
+    const firstCodeLine = codeLines.findIndex(l =>
+      /^(?:const|function|class|var|let)\s+\w/.test(l.trim())
+    );
+    const startIdx = firstCodeLine > 0 ? firstCodeLine : 0;
+
+    let lastCloseIdx = codeLines.length - 1;
+    for (let i = codeLines.length - 1; i >= startIdx; i--) {
+      const t = (codeLines[i] ?? '').trim();
+      if (t === '};' || t === '}' || t === '});' || t === ');' || t === ')') {
+        lastCloseIdx = i;
+        break;
+      }
+    }
+
+    const safeCode = codeLines.slice(startIdx, lastCloseIdx + 1).join('\n');
 
     return `<!DOCTYPE html>
 <html>
@@ -71,7 +97,7 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
     const cn = (...classes) => classes.filter(Boolean).join(' ');
 
     try {
-      ${cleanedCode}
+      ${safeCode}
       
       const _Comp = typeof GeneratedComponent !== 'undefined' ? GeneratedComponent
                    : typeof ${safeName} !== 'undefined' ? ${safeName}
@@ -113,8 +139,15 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
         throw new Error(data.error || 'Failed to generate component');
       }
 
+      // Reject if the model returned prose instead of code
+      const looksLikeCode = /(?:const|function|=>)\s/.test(data.code) &&
+        (/<[A-Za-z][\s/>]/.test(data.code) || data.code.includes('return'));
+      if (!looksLikeCode) {
+        throw new Error('The AI returned an explanation instead of code. Please try again with a more specific prompt.');
+      }
+
       setGeneratedCode(data.code);
-      
+
       // Create Blob URL for visual preview
       const html = generatePreviewHtml(data.code, name);
       const blob = new Blob([html], { type: 'text/html' });
