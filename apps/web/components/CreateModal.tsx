@@ -14,8 +14,6 @@ interface CreateModalProps {
 
 const generatePreviewHtml = (code: string, componentName: string) => {
   const safeName = componentName.replace(/[^a-zA-Z0-9]/g, '') || 'GeneratedComponent';
-  
-  // Hardened Code Cleaner: Strips imports but leaves the component logic
   const cleanCode = code
     .replace(/import\s+[\s\S]*?from\s+['"].*?['"];?/g, '')
     .replace(/export\s+default\s+/g, '')
@@ -30,7 +28,7 @@ const generatePreviewHtml = (code: string, componentName: string) => {
         <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
         <script src="https://cdn.tailwindcss.com"></script>
         <style>
-          body { margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #fff; font-family: sans-serif; }
+          body { margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #fff; }
           #root { width: 100%; display: flex; justify-content: center; }
         </style>
       </head>
@@ -39,42 +37,29 @@ const generatePreviewHtml = (code: string, componentName: string) => {
         <script type="text/babel" data-presets="react,typescript">
           const { useState, useEffect, useRef, useMemo, useCallback, createContext, useContext } = React;
           
-          // --- AUTO-MOCKING LAYER ---
-          // Mocking common libraries to prevent "is not defined" errors
+          // Mocks
           const toast = (msg) => alert("Toast: " + msg);
-          toast.success = (msg) => alert("Success: " + msg);
-          toast.error = (msg) => alert("Error: " + msg);
-          
-          const Lucide = { ArrowUpIcon: () => <span>↑</span>, RotateCw: () => <span>↻</span> };
-          
-          // Mocking missing UI components (Shadcn style)
           const Button = ({ children, className, ...props }) => <button className={"px-4 py-2 bg-black text-white rounded " + className} {...props}>{children}</button>;
           const Textarea = (props) => <textarea className="border p-2 w-full rounded" {...props} />;
+          const ArrowUpIcon = () => <span>↑</span>;
           
-          // --- USER CODE ---
           ${cleanCode}
 
-          // --- SMART RENDERER ---
           const App = () => {
             try {
-              // Try explicit name first, then look for common exports, then find any defined function
               let ComponentToRender = null;
-              try { ComponentToRender = eval('${safeName}'); } catch(e) {}
+              try { ComponentToRender = window['${safeName}'] || eval('${safeName}'); } catch(e) {}
               
               if (!ComponentToRender) {
-                // Heuristic: Find the last defined function/const in the code
-                const matches = \`${cleanCode}\`.match(/const\s+([A-Z][a-zA-Z0-9]+)|function\s+([A-Z][a-zA-Z0-9]+)/g);
-                if (matches) {
-                  const lastMatch = matches[matches.length - 1].split(' ').pop();
-                  try { ComponentToRender = eval(lastMatch); } catch(e) {}
-                }
+                // Fallback: search window for last uppercase defined object
+                const keys = Object.keys(window).filter(k => /^[A-Z]/.test(k) && typeof window[k] === 'function');
+                if (keys.length > 0) ComponentToRender = window[keys[keys.length - 1]];
               }
 
-              if (!ComponentToRender) return <div className="text-red-500 p-4 border border-red-200 bg-red-50 rounded">Component not found. Ensure your component name matches the "Name" field or is defined as a const/function.</div>;
-              
+              if (!ComponentToRender) return <div className="text-red-500">Component "${safeName}" not found.</div>;
               return <ComponentToRender />;
             } catch (e) {
-              return <div className="text-red-500 p-4 bg-red-50 rounded">Runtime Error: {e.message}</div>;
+              return <div className="text-red-500">Runtime Error: {e.message}</div>;
             }
           };
 
@@ -101,6 +86,20 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
     setMounted(true);
     return () => setMounted(false);
   }, []);
+
+  // --- AUTO-NAME-SYNC ENGINE ---
+  useEffect(() => {
+    if (!manualCode) return;
+    
+    // Scan for the main component name
+    const match = manualCode.match(/const\s+([A-Z][a-zA-Z0-9]+)|function\s+([A-Z][a-zA-Z0-9]+)/);
+    if (match) {
+      const detectedName = match[1] || match[2];
+      if (detectedName && detectedName !== name) {
+        setName(detectedName);
+      }
+    }
+  }, [manualCode]);
 
   useEffect(() => {
     if (terminalEndRef.current) {
@@ -142,10 +141,8 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
         }
       }
 
-      // Extraction v5
       const demoMatch = accumulatedOutput.match(/```(?:jsx|tsx|javascript|js)?\s*demo\.tsx\s*([\s\S]*?)```/i);
       const componentMatch = accumulatedOutput.match(/```(?:jsx|tsx|javascript|js)?\s*[a-z-]+\.tsx\s*([\s\S]*?)```/i);
-      
       const finalCode = (demoMatch ? demoMatch[1] : (componentMatch ? componentMatch[1] : null))?.trim();
       
       if (finalCode) {
@@ -189,14 +186,14 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
               <div className="section-header">
                 <span className="editor-status">TSX EDITOR</span>
               </div>
-              <textarea value={manualCode} onChange={(e) => setManualCode(e.target.value)} className="code-editor-textarea" spellCheck={false} placeholder="Paste or write TSX here..." />
+              <textarea value={manualCode} onChange={(e) => setManualCode(e.target.value)} className="code-editor-textarea" spellCheck={false} placeholder="Paste your code here..." />
             </div>
 
             <div className="config-section">
               <div className="input-grid">
                 <div className="input-field">
-                  <label>Name</label>
-                  <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. ChatInputDemo" />
+                  <label>Name (Auto-Detected)</label>
+                  <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Detected Name..." />
                 </div>
                 <div className="input-field">
                   <label>Category</label>
@@ -210,7 +207,7 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
 
               <div className="ai-refinement-area">
                 <div className="ai-input-wrapper">
-                  <input type="text" value={aiInstruction} onChange={(e) => setAiInstruction(e.target.value)} placeholder="Ask AI to refine or generate..." />
+                  <input type="text" value={aiInstruction} onChange={(e) => setAiInstruction(e.target.value)} placeholder="AI refinement instructions..." />
                   <button onClick={handleTest} disabled={isGenerating} className="refine-btn">
                     {isGenerating ? <RotateCw className="animate-spin" size={18} /> : <Send size={18} />}
                   </button>
