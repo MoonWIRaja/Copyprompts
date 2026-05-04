@@ -6,7 +6,7 @@ export async function POST(req: Request) {
     const { prompt, name, category } = await req.json();
     const safeName = name.replace(/\s+/g, '');
 
-    console.log(`[Gemini CLI] Generating component with AUTO model: ${name}...`);
+    console.log(`[Gemini CLI] Attempting generation for: ${name}...`);
 
     const fullPrompt = `You are an expert React developer. Generate a high-quality React component.
     
@@ -15,50 +15,65 @@ export async function POST(req: Request) {
     User Prompt: ${prompt}
     
     CRITICAL RULES:
-    - Use plain JavaScript/JSX only. DO NOT use TypeScript, type annotations, or generics.
-    - DO NOT use React.forwardRef with generic type parameters.
-    - Use Tailwind CSS for all styling.
-    - DO NOT import anything. All dependencies are available globally.
-    - DO NOT use "export default" or "export". Define with "const ${safeName} = ..."
-    - Return ONLY the raw JSX code. No markdown fences, no explanations.`;
+    - Use plain JavaScript/JSX only. No TypeScript.
+    - No imports.
+    - No exports. Define with "const ${safeName} = ..."
+    - Return ONLY raw code.`;
 
-    // Execute Gemini CLI with --model auto to avoid 404 errors
-    // We also use --output-format text to get clean output
-    const command = `/opt/nodejs/bin/gemini --model auto -p "${fullPrompt.replace(/"/g, '\\"')}"`;
+    // Try multiple ways to call the CLI
+    const commands = [
+      `/opt/nodejs/bin/gemini --model auto -p "${fullPrompt.replace(/"/g, '\\"')}"`,
+      `npx @google/gemini-cli --model auto -p "${fullPrompt.replace(/"/g, '\\"')}"`
+    ];
     
     let output = '';
-    try {
-      // Execute with a longer timeout for complex generation
-      output = execSync(command, { encoding: 'utf8', timeout: 90000 });
-    } catch (execError: any) {
-      console.error('[Gemini CLI] Execution failed:', execError.message);
-      return NextResponse.json({ error: 'CLI Execution failed. Make sure you are logged in via "gemini hello"' }, { status: 500 });
+    let lastError = '';
+
+    for (const cmd of commands) {
+      try {
+        output = execSync(cmd, { encoding: 'utf8', timeout: 90000 });
+        if (output) break; 
+      } catch (execError: any) {
+        lastError = execError.stdout || execError.stderr || execError.message;
+        console.warn(`[Gemini CLI] Command failed: ${cmd.substring(0, 20)}... Error: ${lastError.substring(0, 100)}`);
+        
+        // If it's a 429 Rate Limit error, we should inform the user specifically
+        if (lastError.includes('429') || lastError.includes('Too Many Requests')) {
+          return NextResponse.json({ 
+            error: 'Google Gemini is temporarily throttled (Rate Limit 429). Please wait 5 minutes and try again.' 
+          }, { status: 429 });
+        }
+      }
+    }
+
+    if (!output) {
+      return NextResponse.json({ error: `CLI failed: ${lastError.substring(0, 200)}` }, { status: 500 });
     }
 
     let generatedCode = output;
     
-    // Remove terminal colors/escapes
+    // Cleanup ANSI and boxes
     generatedCode = generatedCode.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '');
     
-    // Strip markdown fences if AI wraps code in them
-    generatedCode = generatedCode
-      .replace(/^```(?:jsx|tsx|javascript|typescript|js|ts|react)?\s*\n?/gm, '')
-      .replace(/```\s*$/gm, '')
-      .trim();
-
-    // The CLI output can be messy with headers/footers. 
-    // We want to extract just the component code.
-    // If we see the header bars, we split by them.
-    if (generatedCode.includes('▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀')) {
-      const parts = generatedCode.split('▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀');
-      if (parts.length > 1) {
-        generatedCode = parts[1].split('▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄')[0].trim();
+    if (generatedCode.includes('▀▀▀▀▀▀▀▀')) {
+      const parts = generatedCode.split('▀▀▀▀▀▀▀▀');
+      for (const part of parts) {
+        if (part.includes('const ') || part.includes('React.')) {
+          generatedCode = part.split('▄▄▄▄▄▄▄▄')[0].trim();
+          break;
+        }
       }
     }
 
-    return NextResponse.json({ code: generatedCode, method: 'cli-auto' });
+    // Final safety strip for markdown fences
+    generatedCode = generatedCode
+      .replace(/^```(?:jsx|tsx|javascript|js|react)?\s*\n?/gm, '')
+      .replace(/```\s*$/gm, '')
+      .trim();
+
+    return NextResponse.json({ code: generatedCode, method: 'cli-bridge' });
   } catch (error: any) {
-    console.error('Bridge Error:', error);
+    console.error('Bridge Critical Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
