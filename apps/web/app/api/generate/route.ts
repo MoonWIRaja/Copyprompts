@@ -7,26 +7,29 @@ export async function POST(req: Request) {
     const { prompt, name, category } = await req.json();
     const safeName = name.replace(/\s+/g, '');
 
-    const fullPrompt = `TASK: Generate a React component named "${safeName}" for category "${category}".
-    DESCRIPTION: ${prompt}
+    const fullPrompt = `You are a Senior React Developer.
+    TASK: Generate a single-file React component named "${safeName}" for category "${category}".
+    REQUIREMENT: ${prompt}
     
-    STRICT RULES:
-    - Use plain JavaScript/JSX ONLY (NO TypeScript).
-    - Use Tailwind CSS.
-    - DO NOT use React.forwardRef with types.
-    - DO NOT import anything.
-    - DO NOT explain anything.
-    - OUTPUT ONLY THE CODE.`;
+    STRICT SYNTAX RULES:
+    1. Language: Plain JavaScript/JSX only.
+    2. Styling: Use Tailwind CSS.
+    3. Syntax: Ensure every ternary operator (condition ? a : b) is complete with both parts.
+    4. Safety: No TypeScript annotations, no imports, no exports.
+    5. Structure: Define only "const ${safeName} = () => { ... };".
+    6. Quality: Generate high-end, premium UI components.
+    
+    OUTPUT: Return ONLY the code block. NO explanations.`;
 
     const binPath = '/opt/nodejs/bin/gemini';
-    // Using --model auto as requested for best intelligence
+    // Using 'auto' as requested by the user.
     const args = ['--model', 'auto', '-p', fullPrompt];
 
     const encoder = new TextEncoder();
 
     const stream = new ReadableStream({
       start(controller) {
-        console.log(`[Gemini CLI v2] Requesting AUTO generation for: ${name}...`);
+        console.log(`[Gemini CLI v2.1] Requesting AUTO generation for: ${name}...`);
         
         const child = spawn(binPath, args, {
           env: { ...process.env, TERM: 'xterm-256color' }
@@ -41,7 +44,7 @@ export async function POST(req: Request) {
         });
 
         child.on('close', (code) => {
-          console.log(`[Gemini CLI v2] Closed with code ${code}`);
+          console.log(`[Gemini CLI v2.1] Finished with code ${code}`);
           controller.close();
         });
 
