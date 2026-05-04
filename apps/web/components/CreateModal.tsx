@@ -15,7 +15,11 @@ interface CreateModalProps {
 const generatePreviewHtml = (code: string, componentName: string) => {
   const safeName = componentName.replace(/[^a-zA-Z0-9]/g, '') || 'GeneratedComponent';
   
-  // Advanced Cleaner: Strips problematic imports but keeps TSX structure
+  // Extract all interfaces/types to mock them as values to prevent ReferenceErrors
+  const detectedTypes = (code.match(/(?:interface|type)\s+([A-Z][a-zA-Z0-9]+)/g) || [])
+    .map(t => t.split(/\s+/)[1]);
+  const typeMocks = detectedTypes.map(t => `const ${t} = {};`).join('\n');
+
   const cleanCode = code
     .replace(/import\s+[\s\S]*?from\s+['"].*?['"];?/g, '')
     .replace(/export\s+default\s+/g, '')
@@ -39,22 +43,15 @@ const generatePreviewHtml = (code: string, componentName: string) => {
         <script type="text/babel" data-presets="react,typescript">
           const { useState, useEffect, useRef, useMemo, useCallback, createContext, useContext } = React;
           
-          // --- GLOBAL REFERENCE GUARD (Proxy) ---
-          // This prevents ReferenceErrors by returning a dummy function/object if something is missing
-          const guard = {
-            get: (target, prop) => {
-              if (prop in target) return target[prop];
-              if (prop === 'ChatInputContextValue') return {}; // Special case for your error
-              console.warn("Reference missing:", prop);
-              return () => null; // Return empty component as fallback
-            }
-          };
-          window.Lucide = new Proxy({}, guard);
-          const toast = new Proxy(() => null, guard);
+          // --- TYPE PROTECTION LAYER ---
+          // Mocks detected TS interfaces as JS values to prevent ReferenceErrors
+          ${typeMocks}
 
-          // Standard UI Mocks
+          // Global Mocks
+          const toast = (m) => console.log("Toast:", m);
           const Button = (p) => <button className="px-3 py-1 bg-black text-white rounded" {...p}>{p.children}</button>;
           const Textarea = (p) => <textarea className="border rounded p-2" {...p} />;
+          const ArrowUpIcon = () => <span>↑</span>;
 
           // --- MERGED CODE ---
           ${cleanCode}
@@ -63,9 +60,7 @@ const generatePreviewHtml = (code: string, componentName: string) => {
           const App = () => {
             try {
               let ComponentToRender = null;
-              
-              // Search for the best component to display
-              const searchOrder = ['${safeName}', 'ChatInputDemo', 'Demo', 'Example'];
+              const searchOrder = ['${safeName}', 'ChatInputDemo', 'Demo', 'Example', 'App'];
               for (const name of searchOrder) {
                 try { 
                   const comp = eval(name); 
@@ -74,12 +69,11 @@ const generatePreviewHtml = (code: string, componentName: string) => {
               }
 
               if (!ComponentToRender) {
-                // Last resort: any uppercase function
                 const keys = Object.keys(window).filter(k => /^[A-Z]/.test(k) && typeof window[k] === 'function' && k !== 'App');
                 if (keys.length > 0) ComponentToRender = window[keys[keys.length - 1]];
               }
 
-              if (!ComponentToRender) return <div className="p-4 text-orange-600 bg-orange-50 rounded">Waiting for component definition...</div>;
+              if (!ComponentToRender) return <div className="p-4 text-orange-600 bg-orange-50 rounded">Waiting for component...</div>;
               return <ComponentToRender />;
             } catch (e) {
               return <div className="p-4 text-red-600 bg-red-50 rounded">Render Error: {e.message}</div>;
@@ -110,7 +104,6 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
     return () => setMounted(false);
   }, []);
 
-  // Universal Auto-Name Sync
   useEffect(() => {
     if (!manualCode) return;
     const match = manualCode.match(/(?:const|function)\s+([A-Z][a-zA-Z0-9]+)/);
@@ -157,10 +150,10 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
         }
       }
 
-      // Extraction v7: Match ANY .ts, .tsx, .js, .jsx file block
-      const blocks = accumulatedOutput.match(/```(?:jsx|tsx|javascript|js|typescript|ts)?\s*[\w.-]+\.(?:tsx|ts|jsx|js)\s*([\s\S]*?)```/gi) || [];
+      // Extraction v8: Support quoted filenames and all extensions
+      const blocks = accumulatedOutput.match(/```(?:jsx|tsx|javascript|js|typescript|ts)?\s*["']?[\w.-]+\.(?:tsx|ts|jsx|js)["']?\s*([\s\S]*?)```/gi) || [];
       const mergedCode = blocks.map(block => {
-        return block.replace(/```(?:jsx|tsx|javascript|js|typescript|ts)?\s*[\w.-]+\.(?:tsx|ts|jsx|js)\s*/i, '').replace(/```$/, '').trim();
+        return block.replace(/```(?:jsx|tsx|javascript|js|typescript|ts)?\s*["']?[\w.-]+\.(?:tsx|ts|jsx|js)["']?\s*/i, '').replace(/```$/, '').trim();
       }).join('\n\n');
       
       if (mergedCode) {
@@ -208,7 +201,7 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
           <div className="control-pane">
             <div className="editor-section">
               <div className="section-header">
-                <span className="editor-status">TSX BULLETPROOF v7</span>
+                <span className="editor-status">TSX BULLETPROOF v8</span>
               </div>
               <textarea value={manualCode} onChange={(e) => setManualCode(e.target.value)} className="code-editor-textarea" spellCheck={false} placeholder="Paste or generate code..." />
             </div>
