@@ -1,167 +1,133 @@
-import React, { useState } from 'react';
-import { X, ChevronLeft, ChevronRight, RotateCw, Bookmark, Share, Moon, Sun, Copy, ExternalLink, Check, Code } from 'lucide-react';
-import { getComponents, addComponent } from '../lib/data';
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  X, Copy, ChevronRight, Share, Bookmark, ExternalLink, 
+  Sun, RotateCw, Code, Sparkles, Terminal, Send
+} from 'lucide-react';
 import './create-modal.css';
 
 interface CreateModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  addComponent: (component: any) => void;
 }
 
-export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) => {
-  const [name, setName] = React.useState('');
-  const [category, setCategory] = React.useState('');
-  const [manualCode, setManualCode] = React.useState(`const MyComponent = () => {
+const generatePreviewHtml = (code: string, componentName: string) => {
+  const safeName = componentName.replace(/[^a-zA-Z0-9]/g, '') || 'GeneratedComponent';
+  // Strip any export/import statements that might have leaked
+  const cleanCode = code
+    .replace(/import\s+[\s\S]*?from\s+['"].*?['"];?/g, '')
+    .replace(/export\s+default\s+/g, '')
+    .replace(/export\s+/g, '');
+
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+        <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+        <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <style>
+          body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh;
+            background-color: transparent;
+          }
+        </style>
+      </head>
+      <body>
+        <div id="root"></div>
+        <script type="text/babel">
+          const { useState, useEffect, useRef, useMemo, useCallback } = React;
+          
+          ${cleanCode}
+
+          const App = () => {
+            const [err, setErr] = useState(null);
+            
+            try {
+              // Try to find the component by the name provided or the last defined variable
+              const ComponentToRender = typeof ${safeName} !== 'undefined' ? ${safeName} : null;
+              
+              if (!ComponentToRender) {
+                return (
+                  <div style={{color: '#ef4444', padding: '20px', textAlign: 'center'}}>
+                    <strong>Error:</strong> Component "${safeName}" not found in code.
+                  </div>
+                );
+              }
+              return <ComponentToRender />;
+            } catch (e) {
+              return <div style={{color: '#ef4444'}}>{e.message}</div>;
+            }
+          };
+
+          const root = ReactDOM.createRoot(document.getElementById('root'));
+          root.render(<App />);
+        </script>
+      </body>
+    </html>
+  `;
+};
+
+export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: CreateModalProps) => {
+  const [name, setName] = useState('');
+  const [category, setCategory] = useState('ai-chats');
+  const [manualCode, setManualCode] = useState(`const MyComponent = () => {
   return (
-    <div className="p-8 bg-indigo-600 text-white rounded-3xl shadow-xl">
-      <h1 className="text-2xl font-bold">Hello Summoner!</h1>
-      <p className="mt-2 opacity-80">Edit this code or ask AI to change it.</p>
+    <div className="p-12 bg-white dark:bg-zinc-950 rounded-[3rem] border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
+      <h1 className="text-4xl font-black italic tracking-tighter text-black dark:text-white uppercase">
+        Neo Brutalist UI
+      </h1>
+      <p className="mt-4 text-xl font-medium text-zinc-600 dark:text-zinc-400">
+        Edit this code manually or ask AI to refine it.
+      </p>
+      <button className="mt-8 px-8 py-4 bg-[#FF3D00] text-white font-bold border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all">
+        GET STARTED
+      </button>
     </div>
   );
 };`);
-  const [aiInstruction, setAiInstruction] = React.useState('');
-  const [isTested, setIsTested] = React.useState(false);
-  const [isTesting, setIsTesting] = React.useState(false);
-  const [generatedCode, setGeneratedCode] = useState('');
-  const [streamingLogs, setStreamingLogs] = useState('');
+  const [aiInstruction, setAiInstruction] = useState('');
+  const [isTested, setIsTested] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const terminalEndRef = React.useRef<HTMLPreElement>(null);
+  const [streamingLogs, setStreamingLogs] = useState('');
+  const terminalEndRef = useRef<HTMLPreElement>(null);
 
-  // Auto-scroll terminal to bottom
-  React.useEffect(() => {
+  useEffect(() => {
     if (terminalEndRef.current) {
       terminalEndRef.current.scrollTop = terminalEndRef.current.scrollHeight;
     }
   }, [streamingLogs]);
-  const [previewUrl, setPreviewUrl] = React.useState('');
 
   if (!isOpen) return null;
 
-  const generatePreviewHtml = (code: string, componentName: string = 'GeneratedComponent') => {
-    const safeName = componentName.replace(/\s+/g, '');
-    
-    // Aggressively clean code for browser-safe JSX
-    const cleanedCode = code
-      // Remove all import statements
-      .replace(/import\s+[\s\S]*?\s+from\s+['"].*?['"];?/g, '')
-      .replace(/import\s+['"].*?['"];?/g, '')
-      // Remove export statements
-      .replace(/export\s+default\s+/, `const GeneratedComponent = `)
-      .replace(/export\s+(?:const|function|class)\s+/g, 'const ')
-      .replace(/export\s+/g, '')
-      // Strip TypeScript: interfaces, types, enums
-      .replace(/\b(interface|type|enum)\s+\w+[\s\S]*?\{[\s\S]*?\}/g, '')
-      // Strip generic type params from function calls like React.forwardRef<Type, Type>
-      .replace(/React\.forwardRef\s*<[^>]*>/g, 'React.forwardRef')
-      .replace(/React\.FC\s*<[^>]*>/g, '')
-      .replace(/React\.ComponentProps\s*<[^>]*>/g, 'any')
-      // Strip type annotations ": Type" from params and variables
-      .replace(/:\s*React\.\w+(?:<[^>]*>)?/g, '')
-      .replace(/:\s*\w+(?:\[\])?\s*(?=[,\)\}=;])/g, '')
-      // Strip "as Type" assertions
-      .replace(/\s+as\s+\w+(?:<[^>]*>)?/g, '')
-      // Strip markdown bullet prefix (* or -) from every line
-      // Gemma wraps entire code responses in "* " bullet formatting
-      .split('\n').map(l => l.replace(/^\s*[*\-]\s+/, '')).join('\n')
-      // Strip block comments
-      .replace(/\/\*[\s\S]*?\*\//g, '')
-      // Collapse multiline regular-quoted strings (e.g. long Tailwind classNames)
-      .replace(/"[^"\\]*(?:\\.[^"\\]*)*"/gs, m => m.replace(/\n\s*/g, ' '))
-      .replace(/'[^'\\]*(?:\\.[^'\\]*)*'/gs, m => m.replace(/\n\s*/g, ' '))
-      .trim();
-
-    // Strip preamble and trailing thinking text
-    const codeLines = cleanedCode.split('\n');
-    const firstCodeLine = codeLines.findIndex(l =>
-      /^(?:const|function|class|var|let)\s+\w/.test(l.trim())
-    );
-    const startIdx = firstCodeLine > 0 ? firstCodeLine : 0;
-
-    let lastCloseIdx = codeLines.length - 1;
-    for (let i = codeLines.length - 1; i >= startIdx; i--) {
-      const t = (codeLines[i] ?? '').trim();
-      if (t === '};' || t === '}' || t === '});' || t === ');' || t === ')') {
-        lastCloseIdx = i;
-        break;
-      }
-    }
-
-    const safeCode = codeLines.slice(startIdx, lastCloseIdx + 1).join('\n');
-
-    return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.tailwindcss.com"><\/script>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\/script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script>
-  <script src="https://unpkg.com/lucide-react@latest/dist/umd/lucide-react.js"><\/script>
-  <style>
-    * { box-sizing: border-box; }
-    body { background: #09090b; color: #fafafa; margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: system-ui, -apple-system, sans-serif; padding: 24px; }
-    #root { width: 100%; max-width: 800px; }
-  </style>
-</head>
-<body>
-  <div id="root"><div style="color:#666;text-align:center">Loading preview...</div></div>
-  <script type="text/babel" data-presets="react">
-    // Make all Lucide icons available
-    try { Object.assign(window, LucideReact); } catch(e) {}
-    
-    // Helper: cn utility
-    const cn = (...classes) => classes.filter(Boolean).join(' ');
-
-    try {
-      ${safeCode}
-      
-      const _Comp = typeof GeneratedComponent !== 'undefined' ? GeneratedComponent
-                   : typeof ${safeName} !== 'undefined' ? ${safeName}
-                   : null;
-      
-      if (_Comp) {
-        ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(_Comp));
-      } else {
-        document.getElementById('root').innerHTML = '<div style="color:#ef4444;padding:16px;border:1px solid #ef4444;border-radius:8px">Component not found. Try a different name.</div>';
-      }
-    } catch(err) {
-      document.getElementById('root').innerHTML = '<div style="color:#ef4444;padding:16px;border:1px solid #ef4444;border-radius:8px">Render error: ' + err.message + '</div>';
-    }
-  <\/script>
-</body>
-</html>`;
-  };
-
   const handleTest = async () => {
-    if (!name || !category || !prompt) {
-      alert('Please fill in all fields before testing.');
-      return;
-    }
-    setIsTesting(true);
+    if (!aiInstruction.trim()) return;
+    
+    setIsGenerating(true);
+    setStreamingLogs('');
     setIsTested(false);
+
     try {
-      setIsGenerating(true);
-      setStreamingLogs('');
-      
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: aiInstruction,
-          currentCode: manualCode, // Send existing code for AI to refine
-          name: name,
-          category: category
+          currentCode: manualCode,
+          name: name || 'MyComponent',
+          category
         }),
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to generate component');
-      }
-
-      // Read the stream
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let accumulatedOutput = '';
@@ -170,26 +136,20 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          
-          const chunk = decoder.decode(value, { stream: true });
+          const chunk = decoder.decode(value);
           accumulatedOutput += chunk;
-          
-          // Update logs for the user to see "CLI running"
           setStreamingLogs(prev => prev + chunk);
         }
       }
 
-      // Extraction logic v3 (Integration Guide Support)
+      // Extraction Logic v4
       let fullGuide = accumulatedOutput.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '');
       let previewCode = '';
 
-      // 1. Try to find 'demo.tsx' block first
       const demoMatch = fullGuide.match(/```(?:jsx|tsx|javascript|js)?\s*demo\.tsx\s*([\s\S]*?)```/i);
-      
       if (demoMatch && demoMatch[1]) {
         previewCode = demoMatch[1].trim();
       } else {
-        // 2. Fallback: Find the largest code block
         const allBlocks = fullGuide.match(/```(?:jsx|tsx|javascript|js)?\s*([\s\S]*?)```/g);
         if (allBlocks && allBlocks.length > 0) {
           previewCode = Array.from(allBlocks).reduce((a, b) => a.length > b.length ? a : b)
@@ -200,211 +160,153 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
       }
 
       if (previewCode.length > 50) {
-        setManualCode(previewCode); // Use the demo for the live preview editor
-        setGeneratedCode(fullGuide); // Save the FULL GUIDE for publishing
+        setManualCode(previewCode);
         setIsTested(true);
-      } else {
-        throw new Error('AI failed to generate a valid integration guide. Please try again.');
       }
     } catch (err: any) {
-      console.error('Test Error:', err);
       alert(`Error: ${err.message}`);
     } finally {
       setIsGenerating(false);
-      setIsTesting(false);
     }
   };
 
   const handlePublish = () => {
-    if (!isTested) return;
-    
     addComponent({
-      name,
+      name: name || 'MyComponent',
       category,
       prompt: aiInstruction,
-      code: generatedCode,
-      previewUrl: 'https://cdn.21st.dev/bundled/209.html?theme=dark&dark=true', // Mock preview
+      code: manualCode,
+      previewUrl: 'https://cdn.21st.dev/bundled/209.html?theme=dark&dark=true',
     });
-
-    // Notify page to refresh
     window.dispatchEvent(new CustomEvent('refresh-marketplace'));
-
     onSuccess?.();
     onClose();
-    // Reset form
-    setName('');
-    setCategory('');
-    setAiInstruction('');
-    setIsTested(false);
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
-        <div className="modal-header">
-          <div className="modal-header-left">
-            <div className="modal-author-avatar">
-              <img src="https://avatars.githubusercontent.com/u/185059885?s=200&v=4" alt="Origin UI" />
-            </div>
-            <h2 className="modal-title">Tooltip</h2>
+    <div className="premium-modal-overlay" onClick={onClose}>
+      <div className="premium-modal-container" onClick={(e) => e.stopPropagation()}>
+        {/* Modern Navbar */}
+        <div className="premium-modal-nav">
+          <div className="nav-left">
+            <div className="brand-dot"></div>
+            <span className="brand-text">COPYPEOMPTS <span className="text-zinc-400">/ EDITOR</span></span>
           </div>
-          
-          <div className="modal-header-actions">
-            <button className="modal-icon-btn"><Sun size={14} /></button>
-            <button className="modal-icon-btn"><RotateCw size={14} /></button>
-            <button className="modal-icon-btn"><Share size={14} /></button>
-            <button className="modal-icon-btn"><Bookmark size={14} /></button>
-            <button className="modal-icon-btn"><ExternalLink size={14} /></button>
-            <div className="modal-copy-group">
-              <button className="modal-copy-btn">
-                <Copy size={14} />
-                <span>Copy prompt</span>
-              </button>
-              <button className="modal-copy-dropdown-btn">
-                <ChevronRight size={14} style={{ transform: 'rotate(90deg)' }} />
-              </button>
-            </div>
-            <button className="modal-close-btn" onClick={onClose}>
-              <X size={16} />
-            </button>
+          <div className="nav-right">
+            <button className="nav-icon-btn"><Share size={16}/></button>
+            <button className="nav-icon-btn"><Bookmark size={16}/></button>
+            <button className="nav-close-btn" onClick={onClose}><X size={20}/></button>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="modal-content">
-          <div className="modal-body-split">
-            <div className="modal-left-pane">
-                <div className="preview-content">
-                  {isGenerating && (
-                    <div className="streaming-logs">
-                      <div className="terminal-header">
-                        <span className="dot red"></span>
-                        <span className="dot yellow"></span>
-                        <span className="dot green"></span>
-                        <span className="terminal-title">Gemini CLI Output</span>
-                      </div>
-                      <pre className="terminal-body" ref={terminalEndRef}>
-                        {streamingLogs || 'Establishing connection to Gemini CLI...'}
-                      </pre>
-                    </div>
-                  )}
-                  {manualCode ? (
-                    <iframe
-                      srcDoc={generatePreviewHtml(manualCode, name)}
-                      className="visual-preview-iframe"
-                      title="Component Preview"
-                    />
-                  ) : !isGenerating && (
-                    <div className="preview-placeholder">
-                      <div className="placeholder-icon">
-                        <Code size={48} />
-                      </div>
-                      <h3>No Preview Yet</h3>
-                      <p>Enter a prompt and click "Test" to generate and preview your component.</p>
-                    </div>
-                  )}
-                </div>
+        <div className="premium-modal-body">
+          {/* Left: Preview Section */}
+          <div className="preview-pane">
+            <div className="pane-header">
+              <div className="header-tabs">
+                <button className="tab-btn active">Live Preview</button>
+                <button className="tab-btn">Canvas</button>
+              </div>
+              <div className="header-actions">
+                <Sun size={14} className="text-zinc-400" />
+                <div className="zoom-level">100%</div>
+              </div>
             </div>
-            <div className="modal-right-pane">
-              <div className="modal-form">
-                <div className="form-group">
-                  <label>Name</label>
+            
+            <div className="preview-viewport">
+              <iframe 
+                srcDoc={generatePreviewHtml(manualCode, name || 'MyComponent')} 
+                title="Preview"
+                className="preview-iframe"
+              />
+              
+              {isGenerating && (
+                <div className="terminal-overlay">
+                  <div className="terminal-window">
+                    <div className="terminal-header">
+                      <div className="terminal-dots">
+                        <span></span><span></span><span></span>
+                      </div>
+                      <span className="terminal-title">GEMINI ENGINE v4.0</span>
+                    </div>
+                    <pre ref={terminalEndRef} className="terminal-content">
+                      {streamingLogs || 'Booting AI Core...'}
+                    </pre>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right: Editor & Control Pane */}
+          <div className="control-pane">
+            <div className="editor-section">
+              <div className="section-header">
+                <div className="flex items-center gap-2">
+                  <Code size={14} className="text-indigo-500" />
+                  <span className="text-xs font-bold uppercase tracking-widest">JSX Editor</span>
+                </div>
+                <div className="editor-status">Manual Mode</div>
+              </div>
+              <textarea 
+                value={manualCode}
+                onChange={(e) => setManualCode(e.target.value)}
+                className="code-editor-textarea"
+                spellCheck={false}
+              />
+            </div>
+
+            <div className="config-section">
+              <div className="input-grid">
+                <div className="input-field">
+                  <label>Component Name</label>
                   <input 
                     type="text" 
-                    placeholder="Component Name" 
-                    className="form-input" 
-                    value={name}
+                    value={name} 
                     onChange={(e) => setName(e.target.value)}
+                    placeholder="e.g. HeroSection"
                   />
                 </div>
-                
-                <div className="form-group">
+                <div className="input-field">
                   <label>Category</label>
-                  <select 
-                    className="form-select"
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                  >
-                    <option value="">Select Category</option>
+                  <select value={category} onChange={(e) => setCategory(e.target.value)}>
+                    <option value="hero">Hero Sections</option>
+                    <option value="navigation">Navigation</option>
                     <option value="ai-chats">AI Chats</option>
-                    <option value="avatar">Avatar</option>
-                    <option value="backgrounds">Backgrounds</option>
-                    <option value="buttons">Buttons</option>
-                    <option value="calendars">Calendars</option>
                     <option value="cards">Cards</option>
-                    <option value="carousels">Carousels</option>
-                    <option value="checkboxes">Checkboxes</option>
-                    <option value="dropdowns">Dropdowns</option>
-                    <option value="drawers">Drawers</option>
-                    <option value="forms">Forms</option>
-                    <option value="inputs">Inputs</option>
-                    <option value="loadings">Loadings</option>
-                    <option value="menus">Menus</option>
-                    <option value="modals">Modals</option>
-                    <option value="navbars">Navbars</option>
-                    <option value="notifications">Notifications</option>
-                    <option value="pagination">Pagination</option>
-                    <option value="popovers">Popovers</option>
-                    <option value="sidebars">Sidebars</option>
-                    <option value="sign-in">Sign In</option>
-                    <option value="sign-up">Sign Up</option>
-                    <option value="sliders">Sliders</option>
-                    <option value="tables">Tables</option>
-                    <option value="tabs">Tabs</option>
-                    <option value="toggles">Toggles</option>
-                    <option value="tooltips">Tooltips</option>
-                    <option value="uploads">Uploads</option>
                   </select>
                 </div>
+              </div>
 
-                <div className="form-group flex-1 flex flex-col min-h-0">
-                  <label className="flex justify-between items-center">
-                    JSX Editor
-                    <span className="text-[10px] bg-indigo-500/10 text-indigo-500 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Manual Edit</span>
-                  </label>
-                  <textarea 
-                    className="flex-1 font-mono text-sm leading-relaxed bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 focus:ring-indigo-500/20 p-4"
-                    value={manualCode}
-                    onChange={(e) => setManualCode(e.target.value)}
-                    placeholder="Write your JSX here..."
-                    rows={12}
+              <div className="ai-refinement-area">
+                <div className="ai-input-wrapper">
+                  <Sparkles size={18} className="ai-icon" />
+                  <input 
+                    type="text" 
+                    value={aiInstruction}
+                    onChange={(e) => setAiInstruction(e.target.value)}
+                    placeholder="Ask AI to refine code (e.g. 'Add a hover animation')"
                   />
-                </div>
-
-                <div className="ai-refinement-box mt-4">
-                  <div className="relative group">
-                    <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl blur opacity-20 group-focus-within:opacity-40 transition duration-500"></div>
-                    <div className="relative flex items-center bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-1.5 shadow-sm">
-                      <input 
-                        type="text"
-                        className="flex-1 bg-transparent border-none focus:ring-0 text-sm px-4 py-2 placeholder:text-zinc-500"
-                        value={aiInstruction}
-                        onChange={(e) => setAiInstruction(e.target.value)}
-                        placeholder="Ask AI to refine this code (e.g. 'Make it dark mode')"
-                      />
-                      <button 
-                        onClick={handleTest}
-                        disabled={isGenerating}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all active:scale-95 disabled:opacity-50"
-                      >
-                        {isGenerating ? 'Processing...' : 'Refine with AI'}
-                      </button>
-                    </div>
-                  </div>
                   <button 
-                    onClick={handlePublish}
-                    disabled={!isTested}
-                    className="publish-full-btn"
+                    onClick={handleTest} 
+                    disabled={isGenerating}
+                    className="refine-btn"
                   >
-                    Publish to Marketplace
+                    {isGenerating ? <RotateCw className="animate-spin" size={18} /> : <Send size={18} />}
                   </button>
                 </div>
               </div>
+
+              <button 
+                onClick={handlePublish}
+                disabled={!isTested || isGenerating}
+                className="publish-action-btn"
+              >
+                PUBLISH TO MARKETPLACE
+              </button>
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );
