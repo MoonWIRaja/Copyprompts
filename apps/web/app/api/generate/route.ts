@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { execSync } from 'child_process';
+import { spawnSync } from 'child_process';
 
 export async function POST(req: Request) {
   try {
@@ -20,34 +20,28 @@ export async function POST(req: Request) {
     - No exports. Define with "const ${safeName} = ..."
     - Return ONLY raw code.`;
 
-    // Try multiple ways to call the CLI
-    const commands = [
-      `/opt/nodejs/bin/gemini --model auto -p "${fullPrompt.replace(/"/g, '\\"')}"`,
-      `npx @google/gemini-cli --model auto -p "${fullPrompt.replace(/"/g, '\\"')}"`
-    ];
+    // Use spawnSync with arguments array to avoid shell syntax errors
+    const binPath = '/opt/nodejs/bin/gemini';
+    const args = ['--model', 'auto', '-p', fullPrompt];
     
-    let output = '';
-    let lastError = '';
+    const result = spawnSync(binPath, args, { 
+      encoding: 'utf8', 
+      timeout: 90000,
+      env: { ...process.env, TERM: 'xterm-256color' } // Ensure colors are handled
+    });
 
-    for (const cmd of commands) {
-      try {
-        output = execSync(cmd, { encoding: 'utf8', timeout: 90000 });
-        if (output) break; 
-      } catch (execError: any) {
-        lastError = (execError.stdout?.toString() || execError.stderr?.toString() || execError.message || 'Unknown CLI error');
-        console.warn(`[Gemini CLI] Command failed: ${cmd.substring(0, 20)}... Error: ${lastError.substring(0, 100)}`);
-        
-        // If it's a 429 Rate Limit error, we should inform the user specifically
-        if (lastError.includes('429') || lastError.includes('Too Many Requests')) {
-          return NextResponse.json({ 
-            error: 'Google Gemini is temporarily throttled (Rate Limit 429). Please wait 5 minutes and try again.' 
-          }, { status: 429 });
-        }
+    let output = result.stdout || result.stderr || '';
+    
+    if (result.status !== 0) {
+      console.error('[Gemini CLI] Failed:', output);
+      
+      if (output.includes('429') || output.includes('Too Many Requests')) {
+        return NextResponse.json({ 
+          error: 'Google Gemini is temporarily throttled (Rate Limit 429). Please wait 5 minutes.' 
+        }, { status: 429 });
       }
-    }
-
-    if (!output) {
-      return NextResponse.json({ error: `CLI failed: ${lastError.substring(0, 200)}` }, { status: 500 });
+      
+      return NextResponse.json({ error: `CLI Error: ${output.substring(0, 200)}` }, { status: 500 });
     }
 
     let generatedCode = output;
@@ -55,6 +49,7 @@ export async function POST(req: Request) {
     // Cleanup ANSI and boxes
     generatedCode = generatedCode.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '');
     
+    // Extraction logic for component code
     if (generatedCode.includes('▀▀▀▀▀▀▀▀')) {
       const parts = generatedCode.split('▀▀▀▀▀▀▀▀');
       for (const part of parts) {
@@ -72,7 +67,7 @@ export async function POST(req: Request) {
       .replace(/```\s*$/gm, '')
       .trim();
 
-    return NextResponse.json({ code: generatedCode, method: 'cli-bridge' });
+    return NextResponse.json({ code: generatedCode, method: 'cli-spawn' });
   } catch (error: any) {
     console.error('Bridge Critical Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
