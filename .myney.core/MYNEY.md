@@ -385,6 +385,13 @@ When a user types a `/myney-*` command:
       "actor": "MYney",
       "kind": "architecture",
       "summary": "Replaced REST API generation with a local Gemini CLI bridge. Uses '--model auto' to leverage Google One AI Pro features and bypass REST quota limits."
+    },
+    {
+      "id": "gemini-md-sync",
+      "at": "2026-05-04T22:53:00+08:00",
+      "actor": "MYney",
+      "kind": "configuration",
+      "summary": "Synchronized GEMINI.md with the 'Auto' preference by setting the model to gemini-3.1-flash."
     }
   ],
   "todos": [],
