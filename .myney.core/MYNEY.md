@@ -108,7 +108,7 @@ When a user types a `/myney-*` command:
       "class": "Prompts Summoner",
       "level": 1,
       "xp": 100,
-      "currentQuest": "Implement Live Code Preview",
+      "currentQuest": "Implement Visual Component Preview",
       "activePair": null,
       "inventory": [],
       "lastHandoff": "Marketplace UI refined with CreateModal and mock data.",
@@ -217,6 +217,16 @@ When a user types a `/myney-*` command:
       "xpReward": 250,
       "startedAt": "2026-05-04T21:17:00+08:00",
       "completedAt": "2026-05-04T21:20:00+08:00"
+    },
+    "q10": {
+      "id": "q10",
+      "title": "Implement Visual Component Preview",
+      "description": "Enable real-time visual rendering of AI-generated React code in a dynamic iframe.",
+      "status": "completed",
+      "owner": "moon",
+      "xpReward": 300,
+      "startedAt": "2026-05-04T21:21:00+08:00",
+      "completedAt": "2026-05-04T21:24:00+08:00"
     }
   },
   "reminders": {
@@ -300,6 +310,13 @@ When a user types a `/myney-*` command:
       "actor": "MYney",
       "kind": "feature",
       "summary": "Updated CreateModal to support live code preview. Replaced mock iframe with a dynamic code display and loading state for AI generation."
+    },
+    {
+      "id": "visual-preview-summoning",
+      "at": "2026-05-04T21:24:00+08:00",
+      "actor": "MYney",
+      "kind": "feature",
+      "summary": "Implemented Visual Preview Ritual: Replaced static placeholders with a dynamic iframe that uses Babel, React, and Tailwind CDNs to render AI code visually."
     }
   ],
   "todos": [],

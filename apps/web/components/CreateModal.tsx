@@ -16,8 +16,52 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
   const [isTested, setIsTested] = React.useState(false);
   const [isTesting, setIsTesting] = React.useState(false);
   const [generatedCode, setGeneratedCode] = React.useState('');
+  const [previewUrl, setPreviewUrl] = React.useState('');
 
   if (!isOpen) return null;
+
+  const generatePreviewHtml = (code: string, componentName: string) => {
+    // Clean code: remove imports which don't work in simple browser Babel
+    const cleanedCode = code
+      .replace(/import\s+.*?\s+from\s+['"].*?['"];?/g, '')
+      .replace(/export\s+default\s+/, 'const GeneratedComponent = ')
+      .replace(/export\s+/, '');
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+        <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+        <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+        <script src="https://unpkg.com/lucide@latest"></script>
+        <script src="https://unpkg.com/lucide-react@latest/dist/umd/lucide-react.js"></script>
+        <style>
+          body { background-color: #000; color: #fff; margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: sans-serif; }
+          #root { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+        </style>
+      </head>
+      <body>
+        <div id="root"></div>
+        <script type="text/babel">
+          // Mock Lucide icons for browser preview
+          const { ${Object.keys(require('lucide-react')).filter(k => k !== 'default' && k.length > 2).slice(0, 20).join(', ')} } = LucideReact;
+          
+          ${cleanedCode}
+          
+          // If the AI didn't use the 'GeneratedComponent' name due to regex fail, try to find the component
+          const App = typeof GeneratedComponent !== 'undefined' ? GeneratedComponent : (typeof ${componentName.replace(/\s+/g, '')} !== 'undefined' ? ${componentName.replace(/\s+/g, '')} : () => <div className="text-red-500">Preview Error: Component not found in generated code</div>);
+
+          const root = ReactDOM.createRoot(document.getElementById('root'));
+          root.render(<App />);
+        </script>
+      </body>
+      </html>
+    `;
+  };
 
   const handleTest = async () => {
     if (!name || !category || !prompt) {
@@ -26,6 +70,8 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
     }
     setIsTesting(true);
     setIsTested(false);
+    setGeneratedCode('');
+    setPreviewUrl('');
 
     try {
       const response = await fetch('/api/generate', {
@@ -41,8 +87,14 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
       }
 
       setGeneratedCode(data.code);
+      
+      // Create Blob URL for visual preview
+      const html = generatePreviewHtml(data.code, name);
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      setPreviewUrl(url);
+      
       setIsTested(true);
-      // alert('AI Generation Successful! Preview updated.');
     } catch (error: any) {
       console.error('Test Error:', error);
       alert(`Error: ${error.message}`);
@@ -115,26 +167,28 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
               {isTesting ? (
                 <div className="preview-loading">
                   <RotateCw className="animate-spin" size={32} />
-                  <span>Summoning Component...</span>
+                  <span>Summoning Visual Results...</span>
                 </div>
-              ) : isTested && generatedCode ? (
-                <div className="code-preview-container">
-                  <div className="code-preview-header">
-                    <span className="code-badge">TSX</span>
+              ) : isTested && previewUrl ? (
+                <div className="visual-preview-container">
+                  <iframe 
+                    src={previewUrl} 
+                    title="Component Visual Preview"
+                    className="visual-preview-iframe"
+                  />
+                  <div className="preview-overlay-actions">
                     <button className="code-copy-btn" onClick={() => navigator.clipboard.writeText(generatedCode)}>
                       <Copy size={12} />
-                      Copy Code
+                      View Code
                     </button>
                   </div>
-                  <pre className="code-preview-content">
-                    <code>{generatedCode}</code>
-                  </pre>
                 </div>
               ) : (
-                <iframe 
-                  src="https://cdn.21st.dev/bundled/209.html?theme=dark&dark=true" 
-                  title="Component Preview"
-                />
+                <div className="preview-placeholder">
+                  <div className="placeholder-content">
+                    <p>Enter prompts and click <strong>Test</strong> to see the visual result.</p>
+                  </div>
+                </div>
               )}
             </div>
             <div className="modal-right-pane">
