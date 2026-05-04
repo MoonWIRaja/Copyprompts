@@ -12,7 +12,15 @@ interface CreateModalProps {
 export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) => {
   const [name, setName] = React.useState('');
   const [category, setCategory] = React.useState('');
-  const [prompt, setPrompt] = React.useState('');
+  const [manualCode, setManualCode] = React.useState(`const MyComponent = () => {
+  return (
+    <div className="p-8 bg-indigo-600 text-white rounded-3xl shadow-xl">
+      <h1 className="text-2xl font-bold">Hello Summoner!</h1>
+      <p className="mt-2 opacity-80">Edit this code or ask AI to change it.</p>
+    </div>
+  );
+};`);
+  const [aiInstruction, setAiInstruction] = React.useState('');
   const [isTested, setIsTested] = React.useState(false);
   const [isTesting, setIsTesting] = React.useState(false);
   const [generatedCode, setGeneratedCode] = useState('');
@@ -135,14 +143,14 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
     setIsTested(false);
     try {
       setIsGenerating(true);
-      setGeneratedCode('');
       setStreamingLogs('');
       
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: prompt,
+          prompt: aiInstruction,
+          currentCode: manualCode, // Send existing code for AI to refine
           name: name,
           category: category
         }),
@@ -201,7 +209,7 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
         .trim();
 
       if (finalCode.length > 50) {
-        setGeneratedCode(finalCode);
+        setManualCode(finalCode); // Update the editor with AI's result
         setIsTested(true);
       } else {
         throw new Error('AI failed to generate a valid component. Please try again.');
@@ -289,9 +297,9 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
                       </pre>
                     </div>
                   )}
-                  {generatedCode ? (
+                  {manualCode ? (
                     <iframe
-                      srcDoc={generatePreviewHtml(generatedCode, name)}
+                      srcDoc={generatePreviewHtml(manualCode, name)}
                       className="visual-preview-iframe"
                       title="Component Preview"
                     />
@@ -366,20 +374,39 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
                     rows={10}
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
-                  ></textarea>
+                    className="flex-1 font-mono text-sm leading-relaxed bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 focus:ring-indigo-500/20"
+                    value={manualCode}
+                    onChange={(e) => setManualCode(e.target.value)}
+                    placeholder="Write your JSX here..."
+                  />
                 </div>
 
-                <div className="form-actions">
-                  <button className="form-btn draft" onClick={onClose}>Draft</button>
-                  <button className="form-btn test" onClick={handleTest} disabled={isTesting}>
-                    {isTesting ? 'Testing...' : 'Test'}
-                  </button>
+                <div className="ai-refinement-box mt-4">
+                  <div className="relative group">
+                    <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl blur opacity-20 group-focus-within:opacity-40 transition duration-500"></div>
+                    <div className="relative flex items-center bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-1.5 shadow-sm">
+                      <input 
+                        type="text"
+                        className="flex-1 bg-transparent border-none focus:ring-0 text-sm px-4 py-2 placeholder:text-zinc-500"
+                        value={aiInstruction}
+                        onChange={(e) => setAiInstruction(e.target.value)}
+                        placeholder="Ask AI to refine this code (e.g. 'Make it dark mode')"
+                      />
+                      <button 
+                        onClick={handleTest}
+                        disabled={isGenerating}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all active:scale-95 disabled:opacity-50"
+                      >
+                        {isGenerating ? 'Processing...' : 'Refine with AI'}
+                      </button>
+                    </div>
+                  </div>
                   <button 
-                    className="form-btn publish" 
-                    disabled={!isTested}
                     onClick={handlePublish}
+                    disabled={!isTested}
+                    className="publish-full-btn"
                   >
-                    Publish
+                    Publish to Marketplace
                   </button>
                 </div>
               </div>

@@ -4,33 +4,35 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
-    const { prompt, name, category } = await req.json();
+    const { prompt, currentCode, name, category } = await req.json();
     const safeName = name.replace(/\s+/g, '');
 
+    // If currentCode exists, we ask AI to REFINe it. If not, generate new.
+    const mode = currentCode ? "REFINE the existing code" : "GENERATE a new component";
+    const context = currentCode ? `EXISTING CODE:\n${currentCode}` : "";
+
     const fullPrompt = `You are a Senior React Developer.
-    TASK: Generate a single-file React component named "${safeName}" for category "${category}".
-    REQUIREMENT: ${prompt}
+    TASK: ${mode} named "${safeName}" for category "${category}".
+    INSTRUCTION: ${prompt}
     
-    STRICT SYNTAX RULES:
+    ${context}
+    
+    STRICT RULES:
     1. Language: Plain JavaScript/JSX only.
     2. Styling: Use Tailwind CSS.
-    3. Syntax: Ensure every ternary operator (condition ? a : b) is complete with both parts.
-    4. Safety: No TypeScript annotations, no imports, no exports.
+    3. Syntax: Ensure every ternary operator (condition ? a : b) is complete.
+    4. Safety: No TypeScript, no imports, no exports.
     5. Structure: Define only "const ${safeName} = () => { ... };".
-    6. Quality: Generate high-end, premium UI components.
     
     OUTPUT: Return ONLY the code block. NO explanations.`;
 
     const binPath = '/opt/nodejs/bin/gemini';
-    // Using models/ prefix to ensure the CLI picks the correct stable model
-    const args = ['--model', 'models/gemini-1.5-flash', '-p', fullPrompt];
+    const args = ['--model', 'auto', '-p', fullPrompt];
 
     const encoder = new TextEncoder();
 
     const stream = new ReadableStream({
       start(controller) {
-        console.log(`[Gemini CLI v2.1] Requesting AUTO generation for: ${name}...`);
-        
         const child = spawn(binPath, args, {
           env: { ...process.env, TERM: 'xterm-256color' }
         });
@@ -44,7 +46,6 @@ export async function POST(req: Request) {
         });
 
         child.on('close', (code) => {
-          console.log(`[Gemini CLI v2.1] Finished with code ${code}`);
           controller.close();
         });
 
