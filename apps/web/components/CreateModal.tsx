@@ -18,6 +18,14 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
   const [generatedCode, setGeneratedCode] = useState('');
   const [streamingLogs, setStreamingLogs] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const terminalEndRef = React.useRef<HTMLPreElement>(null);
+
+  // Auto-scroll terminal to bottom
+  React.useEffect(() => {
+    if (terminalEndRef.current) {
+      terminalEndRef.current.scrollTop = terminalEndRef.current.scrollHeight;
+    }
+  }, [streamingLogs]);
   const [previewUrl, setPreviewUrl] = React.useState('');
 
   if (!isOpen) return null;
@@ -266,7 +274,7 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
                         <span className="dot green"></span>
                         <span className="terminal-title">Gemini CLI Output</span>
                       </div>
-                      <pre className="terminal-body">
+                      <pre className="terminal-body" ref={terminalEndRef}>
                         {streamingLogs || 'Establishing connection to Gemini CLI...'}
                       </pre>
                     </div>
