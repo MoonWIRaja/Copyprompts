@@ -186,7 +186,7 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
       // 1. Try to find 'demo.tsx' block first
       const demoMatch = fullGuide.match(/```(?:jsx|tsx|javascript|js)?\s*demo\.tsx\s*([\s\S]*?)```/i);
       
-      if (demoMatch) {
+      if (demoMatch && demoMatch[1]) {
         previewCode = demoMatch[1].trim();
       } else {
         // 2. Fallback: Find the largest code block
