@@ -37,23 +37,28 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
         <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
         <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
         <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-        <script src="https://unpkg.com/lucide@latest"></script>
         <script src="https://unpkg.com/lucide-react@latest/dist/umd/lucide-react.js"></script>
         <style>
-          body { background-color: #000; color: #fff; margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: sans-serif; }
-          #root { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+          body { background-color: #000; color: #fff; margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: sans-serif; overflow: auto; padding: 20px; }
+          #root { width: 100%; display: flex; align-items: center; justify-content: center; }
         </style>
       </head>
       <body>
         <div id="root"></div>
-        <script type="text/babel">
-          // Mock Lucide icons for browser preview
-          const { ${Object.keys(require('lucide-react')).filter(k => k !== 'default' && k.length > 2).slice(0, 20).join(', ')} } = LucideReact;
+        <script type="text/babel" data-presets="react,typescript">
+          // Expose all Lucide icons to the global scope for the generated code
+          const { ...Icons } = LucideReact;
+          Object.assign(window, Icons);
           
           ${cleanedCode}
           
-          // If the AI didn't use the 'GeneratedComponent' name due to regex fail, try to find the component
-          const App = typeof GeneratedComponent !== 'undefined' ? GeneratedComponent : (typeof ${componentName.replace(/\s+/g, '')} !== 'undefined' ? ${componentName.replace(/\s+/g, '')} : () => <div className="text-red-500">Preview Error: Component not found in generated code</div>);
+          // Heuristic to find the component to render
+          const App = typeof GeneratedComponent !== 'undefined' ? GeneratedComponent : 
+                      (typeof ${componentName.replace(/\s+/g, '')} !== 'undefined' ? ${componentName.replace(/\s+/g, '')} : 
+                      () => <div className="text-red-500 p-4 border border-red-500 rounded">
+                              Preview Error: Component "${componentName}" not found. 
+                              Make sure it's exported or matches the name.
+                            </div>);
 
           const root = ReactDOM.createRoot(document.getElementById('root'));
           root.render(<App />);

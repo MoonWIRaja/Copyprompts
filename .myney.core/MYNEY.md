@@ -108,7 +108,7 @@ When a user types a `/myney-*` command:
       "class": "Prompts Summoner",
       "level": 1,
       "xp": 100,
-      "currentQuest": "Implement Visual Component Preview",
+      "currentQuest": "Fix Babel TSX Error",
       "activePair": null,
       "inventory": [],
       "lastHandoff": "Marketplace UI refined with CreateModal and mock data.",
@@ -227,6 +227,16 @@ When a user types a `/myney-*` command:
       "xpReward": 300,
       "startedAt": "2026-05-04T21:21:00+08:00",
       "completedAt": "2026-05-04T21:24:00+08:00"
+    },
+    "q11": {
+      "id": "q11",
+      "title": "Fix Babel TSX Error",
+      "description": "Configure Babel Standalone to support TypeScript syntax in the visual preview.",
+      "status": "completed",
+      "owner": "moon",
+      "xpReward": 150,
+      "startedAt": "2026-05-04T21:27:00+08:00",
+      "completedAt": "2026-05-04T21:30:00+08:00"
     }
   },
   "reminders": {
@@ -317,6 +327,13 @@ When a user types a `/myney-*` command:
       "actor": "MYney",
       "kind": "feature",
       "summary": "Implemented Visual Preview Ritual: Replaced static placeholders with a dynamic iframe that uses Babel, React, and Tailwind CDNs to render AI code visually."
+    },
+    {
+      "id": "babel-tsx-fix",
+      "at": "2026-05-04T21:30:00+08:00",
+      "actor": "MYney",
+      "kind": "bugfix",
+      "summary": "Fixed SyntaxError in visual preview by enabling 'typescript' preset in Babel Standalone. Restored generatePreviewHtml function integrity."
     }
   ],
   "todos": [],
