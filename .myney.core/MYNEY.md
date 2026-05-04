@@ -108,7 +108,7 @@ When a user types a `/myney-*` command:
       "class": "Prompts Summoner",
       "level": 1,
       "xp": 100,
-      "currentQuest": "Clarify Ritual Workflow",
+      "currentQuest": "Create AI Test Script",
       "activePair": null,
       "inventory": [],
       "lastHandoff": "Marketplace UI refined with CreateModal and mock data.",
@@ -167,6 +167,16 @@ When a user types a `/myney-*` command:
       "xpReward": 50,
       "startedAt": "2026-05-04T20:47:00+08:00",
       "completedAt": "2026-05-04T20:48:00+08:00"
+    },
+    "q5": {
+      "id": "q5",
+      "title": "Create AI Test Script",
+      "description": "Develop a script to verify Gemini AI connectivity and functionality.",
+      "status": "completed",
+      "owner": "moon",
+      "xpReward": 150,
+      "startedAt": "2026-05-04T20:51:00+08:00",
+      "completedAt": "2026-05-04T20:53:00+08:00"
     }
   },
   "reminders": {
@@ -215,6 +225,13 @@ When a user types a `/myney-*` command:
       "actor": "MYney",
       "kind": "communication",
       "summary": "Clarified that the Auto-Sync Ritual is now the default background behavior for all user instructions."
+    },
+    {
+      "id": "ai-test-script",
+      "at": "2026-05-04T20:53:00+08:00",
+      "actor": "MYney",
+      "kind": "tooling",
+      "summary": "Created 'scripts/test-ai.ts' and added 'npm run test:ai' to verify Gemini connection."
     }
   ],
   "todos": [],
