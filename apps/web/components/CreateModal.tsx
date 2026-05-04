@@ -171,31 +171,41 @@ export const CreateModal = ({ isOpen, onClose, onSuccess }: CreateModalProps) =>
         }
       }
 
-      // Extraction logic (Same as before but on the accumulated output)
+      // Extraction logic v2 (Heuristic & Regex based)
       let finalCode = accumulatedOutput;
       
-      // Cleanup ANSI
+      // 1. Remove all ANSI escape codes (colors, etc)
       finalCode = finalCode.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '');
-      
-      if (finalCode.includes('▀▀▀▀▀▀▀▀')) {
-        const parts = finalCode.split('▀▀▀▀▀▀▀▀');
-        for (const part of parts) {
-          if (part.includes('const ') || part.includes('React.')) {
-            const splitPart = part.split('▄▄▄▄▄▄▄▄');
-            finalCode = splitPart[0]?.trim() || '';
-            break;
+
+      // 2. Try to find code between markdown fences first (most reliable)
+      const markdownMatch = finalCode.match(/```(?:jsx|tsx|javascript|js)?\s*([\s\S]*?)```/);
+      if (markdownMatch) {
+        finalCode = markdownMatch[1].trim();
+      } else {
+        // 3. Fallback: Look for the component definition if bars are present
+        if (finalCode.includes('▀▀▀▀▀▀▀▀')) {
+          const parts = finalCode.split('▀▀▀▀▀▀▀▀');
+          for (const part of parts) {
+            if (part.includes('const ') && (part.includes('=>') || part.includes('return'))) {
+              finalCode = part.split('▄▄▄▄▄▄▄▄')[0].trim();
+              break;
+            }
           }
         }
       }
 
-      // Final safety strip for markdown fences
+      // 4. Final safety strip for remaining markers
       finalCode = finalCode
         .replace(/^```(?:jsx|tsx|javascript|js|react)?\s*\n?/gm, '')
         .replace(/```\s*$/gm, '')
         .trim();
 
-      setGeneratedCode(finalCode);
-      setIsTested(true);
+      if (finalCode.length > 50) {
+        setGeneratedCode(finalCode);
+        setIsTested(true);
+      } else {
+        throw new Error('AI failed to generate a valid component. Please try again.');
+      }
     } catch (err: any) {
       console.error('Test Error:', err);
       alert(`Error: ${err.message}`);
