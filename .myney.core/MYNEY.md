@@ -115,8 +115,8 @@ When a user types a `/myney-*` command:
       "lastHandoff": "Marketplace UI refined with CreateModal and mock data.",
       "lastBlocker": null,
       "firstOnboarded": "2026-05-04T12:11:30+08:00",
-      "lastSession": "2026-05-05T08:59:34.341+08:00",
-      "sessionsCount": 8,
+      "lastSession": "2026-05-05T09:00:58.494+08:00",
+      "sessionsCount": 9,
       "joinedVia": "solo",
       "languagePreferences": {
         "conversationLanguage": "Malay/English",
@@ -124,7 +124,7 @@ When a user types a `/myney-*` command:
       },
       "personalNotes": [],
       "createdAt": "2026-05-04T12:11:30+08:00",
-      "updatedAt": "2026-05-05T08:59:34.341+08:00"
+      "updatedAt": "2026-05-05T09:00:58.494+08:00"
     }
   },
   "invites": {},
@@ -671,6 +671,6 @@ When a user types a `/myney-*` command:
     }
   ],
   "createdAt": "2026-04-27T15:39:27.958+08:00",
-  "updatedAt": "2026-05-05T08:59:34.343+08:00"
+  "updatedAt": "2026-05-05T09:00:58.494+08:00"
 }
 ```
