@@ -1,0 +1,162 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5] [cursor=pointer]:
+          - img [ref=e6]
+          - generic [ref=e8]: 21st
+        - button "Hide sidebar" [ref=e9] [cursor=pointer]:
+          - img [ref=e10]
+      - generic [ref=e12]:
+        - img [ref=e13]
+        - textbox "Search" [ref=e16]
+        - generic [ref=e17]: ⌘K
+      - generic [ref=e19]:
+        - link "New" [ref=e20] [cursor=pointer]:
+          - /url: "#"
+          - generic [ref=e21]:
+            - img [ref=e22]
+            - generic [ref=e25]: New
+        - link "Popular" [ref=e26] [cursor=pointer]:
+          - /url: "#"
+          - generic [ref=e27]:
+            - img [ref=e28]
+            - generic [ref=e30]: Popular
+        - link "Your Save" [ref=e31] [cursor=pointer]:
+          - /url: "#"
+          - generic [ref=e32]:
+            - img [ref=e33]
+            - generic [ref=e35]: Your Save
+        - link "Color Picker" [ref=e36] [cursor=pointer]:
+          - /url: "#"
+          - generic [ref=e37]:
+            - img [ref=e38]
+            - generic [ref=e44]: Color Picker
+      - generic [ref=e46]:
+        - generic [ref=e47] [cursor=pointer]:
+          - generic [ref=e48]: UI Components
+          - img [ref=e49]
+        - generic [ref=e51]:
+          - generic [ref=e52] [cursor=pointer]:
+            - generic [ref=e53]: AI Chats
+            - generic [ref=e54]: "12"
+          - generic [ref=e55] [cursor=pointer]:
+            - generic [ref=e56]: Avatar
+            - generic [ref=e57]: "24"
+          - generic [ref=e58] [cursor=pointer]:
+            - generic [ref=e59]: Backgrounds
+            - generic [ref=e60]: "33"
+          - generic [ref=e61] [cursor=pointer]:
+            - generic [ref=e62]: Buttons
+            - generic [ref=e63]: "130"
+          - generic [ref=e64] [cursor=pointer]:
+            - generic [ref=e65]: Calendars
+            - generic [ref=e66]: "18"
+          - generic [ref=e67] [cursor=pointer]:
+            - generic [ref=e68]: Cards
+            - generic [ref=e69]: "79"
+          - generic [ref=e70] [cursor=pointer]:
+            - generic [ref=e71]: Carousels
+            - generic [ref=e72]: "15"
+          - generic [ref=e73] [cursor=pointer]:
+            - generic [ref=e74]: Checkboxes
+            - generic [ref=e75]: "42"
+          - generic [ref=e76] [cursor=pointer]:
+            - generic [ref=e77]: Dropdowns
+            - generic [ref=e78]: "56"
+          - generic [ref=e79] [cursor=pointer]:
+            - generic [ref=e80]: Drawers
+            - generic [ref=e81]: "21"
+          - generic [ref=e82] [cursor=pointer]:
+            - generic [ref=e83]: Forms
+            - generic [ref=e84]: "88"
+          - generic [ref=e85] [cursor=pointer]:
+            - generic [ref=e86]: Inputs
+            - generic [ref=e87]: "102"
+          - generic [ref=e88] [cursor=pointer]:
+            - generic [ref=e89]: Loadings
+            - generic [ref=e90]: "34"
+          - generic [ref=e91] [cursor=pointer]:
+            - generic [ref=e92]: Menus
+            - generic [ref=e93]: "47"
+          - generic [ref=e94] [cursor=pointer]:
+            - generic [ref=e95]: Modals
+            - generic [ref=e96]: "45"
+          - generic [ref=e97] [cursor=pointer]:
+            - generic [ref=e98]: Navbars
+            - generic [ref=e99]: "14"
+          - generic [ref=e100] [cursor=pointer]:
+            - generic [ref=e101]: Notifications
+            - generic [ref=e102]: "29"
+          - generic [ref=e103] [cursor=pointer]:
+            - generic [ref=e104]: Pagination
+            - generic [ref=e105]: "11"
+          - generic [ref=e106] [cursor=pointer]:
+            - generic [ref=e107]: Popovers
+            - generic [ref=e108]: "31"
+          - generic [ref=e109] [cursor=pointer]:
+            - generic [ref=e110]: Sidebars
+            - generic [ref=e111]: "10"
+          - generic [ref=e112] [cursor=pointer]:
+            - generic [ref=e113]: Sign In
+            - generic [ref=e114]: "8"
+          - generic [ref=e115] [cursor=pointer]:
+            - generic [ref=e116]: Sign Up
+            - generic [ref=e117]: "8"
+          - generic [ref=e118] [cursor=pointer]:
+            - generic [ref=e119]: Sliders
+            - generic [ref=e120]: "22"
+          - generic [ref=e121] [cursor=pointer]:
+            - generic [ref=e122]: Tables
+            - generic [ref=e123]: "39"
+          - generic [ref=e124] [cursor=pointer]:
+            - generic [ref=e125]: Tabs
+            - generic [ref=e126]: "28"
+          - generic [ref=e127] [cursor=pointer]:
+            - generic [ref=e128]: Toggles
+            - generic [ref=e129]: "25"
+          - generic [ref=e130] [cursor=pointer]:
+            - generic [ref=e131]: Tooltips
+            - generic [ref=e132]: "15"
+          - generic [ref=e133] [cursor=pointer]:
+            - generic [ref=e134]: Uploads
+            - generic [ref=e135]: "19"
+      - generic [ref=e136]:
+        - img [ref=e138] [cursor=pointer]
+        - button "Create" [ref=e140] [cursor=pointer]:
+          - img [ref=e141]
+          - text: Create
+    - generic [ref=e143]:
+      - navigation [ref=e144]:
+        - generic [ref=e146]:
+          - generic [ref=e147]: Copyprompts
+          - img [ref=e148]
+          - generic [ref=e150]: Summoner
+        - generic [ref=e151]:
+          - button "Notifications" [ref=e152] [cursor=pointer]:
+            - img [ref=e153]
+          - button "Sign In" [ref=e157] [cursor=pointer]
+      - main [ref=e158]:
+        - generic [ref=e159]:
+          - list [ref=e161]:
+            - listitem [ref=e162]:
+              - link "Sidebar Layout" [ref=e164] [cursor=pointer]:
+                - /url: "#"
+                - img "Sidebar Layout" [ref=e165]
+              - generic [ref=e166]:
+                - img "shadcn" [ref=e168]
+                - paragraph [ref=e169]: Sidebar Layout
+                - generic [ref=e170]:
+                  - button "14" [ref=e171] [cursor=pointer]:
+                    - img [ref=e172]
+                    - generic [ref=e174]: "14"
+                  - button "45" [ref=e175] [cursor=pointer]:
+                    - img [ref=e176]
+                    - generic [ref=e178]: "45"
+                  - button "10" [ref=e179] [cursor=pointer]:
+                    - img [ref=e180]
+                    - generic [ref=e183]: "10"
+          - complementary [ref=e184]
+  - button "Open Next.js Dev Tools" [ref=e190] [cursor=pointer]:
+    - img [ref=e191]
+  - alert [ref=e194]
