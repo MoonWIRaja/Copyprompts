@@ -80,6 +80,14 @@
   transition: transform 0.3s ease;
 }
 
+.previewFrame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #ffffff;
+  pointer-events: none;
+}
+
 .componentCard:hover .previewImage {
   transform: scale(1.05);
 }

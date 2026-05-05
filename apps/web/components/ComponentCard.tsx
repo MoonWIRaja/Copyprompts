@@ -1,7 +1,9 @@
+/* eslint-disable @next/next/no-img-element */
 import React from 'react';
 import { Bookmark, Heart, Copy } from 'lucide-react';
 import styles from '../app/page.module.css';
 import { ComponentData } from '../lib/data';
+import { createPreviewDocument } from '../lib/component-utils';
 
 interface ComponentCardProps {
   component: ComponentData;
@@ -11,13 +13,22 @@ export const ComponentCard = ({ component }: ComponentCardProps) => {
   return (
     <li className={styles.componentCard}>
       <div className={styles.previewContainer}>
-        <a href="#" aria-label={component.name}>
-          <img 
-            alt={component.name} 
-            src={component.previewUrl}
-            className={styles.previewImage}
+        {component.code ? (
+          <iframe
+            srcDoc={createPreviewDocument(component.code, component.name)}
+            className={styles.previewFrame}
+            sandbox="allow-scripts"
+            title={`${component.name} preview`}
           />
-        </a>
+        ) : (
+          <a href="#" aria-label={component.name}>
+            <img
+              alt={component.name}
+              src={component.previewUrl}
+              className={styles.previewImage}
+            />
+          </a>
+        )}
       </div>
       <div className={styles.cardFooter}>
         <div className={styles.authorAvatar}>

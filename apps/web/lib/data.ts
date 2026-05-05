@@ -1,3 +1,5 @@
+import { buildIntegrationPrompt, detectNpmDependencies } from './component-utils';
+
 export interface ComponentData {
   id: string;
   name: string;
@@ -14,6 +16,8 @@ export interface ComponentData {
   previewUrl: string;
   prompt: string;
   code?: string;
+  dependencies?: string[];
+  isUserCreated?: boolean;
   createdAt: string;
 }
 
@@ -38,14 +42,64 @@ export const initialComponents: ComponentData[] = [
   // Add more initial items if needed
 ];
 
-// In-memory store (Reset on refresh for now, or use localStorage)
-let components = [...initialComponents];
+export type CreateComponentInput = {
+  name: string;
+  category: string;
+  code: string;
+  prompt?: string;
+  previewUrl?: string;
+  dependencies?: string[];
+};
 
-export const getComponents = () => components;
+const STORAGE_KEY = 'copyprompts.components.v1';
+let userComponents: ComponentData[] = [];
+let hasLoadedUserComponents = false;
 
-export const addComponent = (data: Omit<ComponentData, 'id' | 'createdAt' | 'author' | 'stats'>) => {
+function canUseStorage(): boolean {
+  return typeof window !== 'undefined' && Boolean(window.localStorage);
+}
+
+function loadUserComponents(): void {
+  if (hasLoadedUserComponents || !canUseStorage()) return;
+  hasLoadedUserComponents = true;
+
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    userComponents = raw ? JSON.parse(raw) as ComponentData[] : [];
+  } catch (error) {
+    console.warn('Failed to load saved components:', error);
+    userComponents = [];
+  }
+}
+
+function persistUserComponents(): void {
+  if (!canUseStorage()) return;
+
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(userComponents));
+  } catch (error) {
+    console.warn('Failed to persist saved components:', error);
+  }
+}
+
+export const getComponents = () => {
+  loadUserComponents();
+  return [...userComponents, ...initialComponents];
+};
+
+export const addComponent = (data: CreateComponentInput) => {
+  loadUserComponents();
+  const code = data.code.trim();
+  const name = data.name.trim() || 'Untitled Component';
+  const category = data.category || 'ai-chats';
   const newComponent: ComponentData = {
-    ...data,
+    name,
+    category,
+    code,
+    dependencies: data.dependencies || detectNpmDependencies(code),
+    previewUrl: data.previewUrl || '',
+    prompt: data.prompt || buildIntegrationPrompt({ displayName: name, category, code }),
+    isUserCreated: true,
     id: Math.random().toString(36).substr(2, 9),
     createdAt: new Date().toISOString(),
     author: {
@@ -58,6 +112,7 @@ export const addComponent = (data: Omit<ComponentData, 'id' | 'createdAt' | 'aut
       copies: 0,
     },
   };
-  components = [newComponent, ...components];
+  userComponents = [newComponent, ...userComponents];
+  persistUserComponents();
   return newComponent;
 };

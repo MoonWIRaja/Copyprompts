@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import process from 'node:process';
 import { fileURLToPath } from 'url';
 
 // Load root .env so only one .env file is needed in the monorepo

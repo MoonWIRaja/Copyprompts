@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import './sidebar.css';
 import { CreateModal } from './CreateModal';
+import { addComponent } from '../lib/data';
+import { componentCategories } from '../lib/component-utils';
 import { 
   Search, 
   Moon, 
   PlusCircle, 
   ChevronDown,
   ChevronRight,
-  Bell,
-  Sliders,
   PanelLeft,
   Clock,
   Flame,
@@ -19,6 +19,10 @@ import {
 export const Sidebar = ({ isHidden, onHide }: { isHidden?: boolean, onHide?: () => void }) => {
   const [isUIComponentsOpen, setIsUIComponentsOpen] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const handleAddComponent = (component: Parameters<typeof addComponent>[0]) => {
+    addComponent(component);
+    window.dispatchEvent(new Event('refresh-marketplace'));
+  };
 
   return (
     <>
@@ -83,34 +87,12 @@ export const Sidebar = ({ isHidden, onHide }: { isHidden?: boolean, onHide?: () 
           
           {isUIComponentsOpen && (
             <div className="flex flex-col gap-1">
-              <div className="nav-item"><span>AI Chats</span><span className="count">12</span></div>
-              <div className="nav-item"><span>Avatar</span><span className="count">24</span></div>
-              <div className="nav-item"><span>Backgrounds</span><span className="count">33</span></div>
-              <div className="nav-item"><span>Buttons</span><span className="count">130</span></div>
-              <div className="nav-item"><span>Calendars</span><span className="count">18</span></div>
-              <div className="nav-item"><span>Cards</span><span className="count">79</span></div>
-              <div className="nav-item"><span>Carousels</span><span className="count">15</span></div>
-              <div className="nav-item"><span>Checkboxes</span><span className="count">42</span></div>
-              <div className="nav-item"><span>Dropdowns</span><span className="count">56</span></div>
-              <div className="nav-item"><span>Drawers</span><span className="count">21</span></div>
-              <div className="nav-item"><span>Forms</span><span className="count">88</span></div>
-              <div className="nav-item"><span>Inputs</span><span className="count">102</span></div>
-              <div className="nav-item"><span>Loadings</span><span className="count">34</span></div>
-              <div className="nav-item"><span>Menus</span><span className="count">47</span></div>
-              <div className="nav-item"><span>Modals</span><span className="count">45</span></div>
-              <div className="nav-item"><span>Navbars</span><span className="count">14</span></div>
-              <div className="nav-item"><span>Notifications</span><span className="count">29</span></div>
-              <div className="nav-item"><span>Pagination</span><span className="count">11</span></div>
-              <div className="nav-item"><span>Popovers</span><span className="count">31</span></div>
-              <div className="nav-item active"><span>Sidebars</span><span className="count">10</span></div>
-              <div className="nav-item"><span>Sign In</span><span className="count">8</span></div>
-              <div className="nav-item"><span>Sign Up</span><span className="count">8</span></div>
-              <div className="nav-item"><span>Sliders</span><span className="count">22</span></div>
-              <div className="nav-item"><span>Tables</span><span className="count">39</span></div>
-              <div className="nav-item"><span>Tabs</span><span className="count">28</span></div>
-              <div className="nav-item"><span>Toggles</span><span className="count">25</span></div>
-              <div className="nav-item"><span>Tooltips</span><span className="count">15</span></div>
-              <div className="nav-item"><span>Uploads</span><span className="count">19</span></div>
+              {componentCategories.map((category) => (
+                <div className={`nav-item ${category.id === 'sidebars' ? 'active' : ''}`} key={category.id}>
+                  <span>{category.label}</span>
+                  <span className="count">{category.count}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -130,7 +112,7 @@ export const Sidebar = ({ isHidden, onHide }: { isHidden?: boolean, onHide?: () 
     <CreateModal 
       isOpen={isCreateModalOpen} 
       onClose={() => setIsCreateModalOpen(false)} 
-      addComponent={(comp) => console.log('Component added:', comp)}
+      addComponent={handleAddComponent}
     />
     </>
   );

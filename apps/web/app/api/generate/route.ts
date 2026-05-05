@@ -81,7 +81,8 @@ export async function POST(req: Request) {
         'Connection': 'keep-alive',
       },
     });
-  } catch (error: any) {
-    return new Response(`Error: ${error.message}`, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return new Response(`Error: ${message}`, { status: 500 });
   }
 }

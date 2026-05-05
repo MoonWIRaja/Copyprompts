@@ -1,98 +1,33 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { 
-  X, RotateCw, Code, Sparkles, Send
+  X, RotateCw, Send, Copy, Check
 } from 'lucide-react';
+import type { CreateComponentInput } from '../lib/data';
+import {
+  buildIntegrationPrompt,
+  componentCategories,
+  createPreviewDocument,
+  detectComponentName,
+  detectNpmDependencies
+} from '../lib/component-utils';
 import './create-modal.css';
 
 interface CreateModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
-  addComponent: (component: any) => void;
+  addComponent: (component: CreateComponentInput) => void;
 }
-
-const generatePreviewHtml = (code: string, componentName: string) => {
-  const safeName = componentName.replace(/[^a-zA-Z0-9]/g, '') || 'GeneratedComponent';
-  
-  // Extract all interfaces/types to mock them as values to prevent ReferenceErrors
-  const detectedTypes = (code.match(/(?:interface|type)\s+([A-Z][a-zA-Z0-9]+)/g) || [])
-    .map(t => t.split(/\s+/)[1]);
-  const typeMocks = detectedTypes.map(t => `const ${t} = {};`).join('\n');
-
-  const cleanCode = code
-    .replace(/import\s+[\s\S]*?from\s+['"].*?['"];?/g, '')
-    .replace(/export\s+default\s+/g, '')
-    .replace(/export\s+/g, '');
-
-  return `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-        <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-        <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-        <script src="https://cdn.tailwindcss.com"></script>
-        <style>
-          body { margin: 0; padding: 20px; min-height: 100vh; background: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; }
-          #root { width: 100%; display: flex; justify-content: center; }
-        </style>
-      </head>
-      <body>
-        <div id="root"></div>
-        <script type="text/babel" data-presets="react,typescript">
-          const { useState, useEffect, useRef, useMemo, useCallback, createContext, useContext } = React;
-          
-          // --- TYPE PROTECTION LAYER ---
-          // Mocks detected TS interfaces as JS values to prevent ReferenceErrors
-          ${typeMocks}
-
-          // Global Mocks
-          const toast = (m) => console.log("Toast:", m);
-          const Button = (p) => <button className="px-3 py-1 bg-black text-white rounded" {...p}>{p.children}</button>;
-          const Textarea = (p) => <textarea className="border rounded p-2" {...p} />;
-          const ArrowUpIcon = () => <span>↑</span>;
-
-          // --- MERGED CODE ---
-          ${cleanCode}
-
-          // --- SMART RENDERER ---
-          const App = () => {
-            try {
-              let ComponentToRender = null;
-              const searchOrder = ['${safeName}', 'ChatInputDemo', 'Demo', 'Example', 'App'];
-              for (const name of searchOrder) {
-                try { 
-                  const comp = eval(name); 
-                  if (typeof comp === 'function') { ComponentToRender = comp; break; }
-                } catch(e) {}
-              }
-
-              if (!ComponentToRender) {
-                const keys = Object.keys(window).filter(k => /^[A-Z]/.test(k) && typeof window[k] === 'function' && k !== 'App');
-                if (keys.length > 0) ComponentToRender = window[keys[keys.length - 1]];
-              }
-
-              if (!ComponentToRender) return <div className="p-4 text-orange-600 bg-orange-50 rounded">Waiting for component...</div>;
-              return <ComponentToRender />;
-            } catch (e) {
-              return <div className="p-4 text-red-600 bg-red-50 rounded">Render Error: {e.message}</div>;
-            }
-          };
-
-          const root = ReactDOM.createRoot(document.getElementById('root'));
-          root.render(<App />);
-        </script>
-      </body>
-    </html>
-  `;
-};
 
 export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: CreateModalProps) => {
   const [name, setName] = useState('');
   const [category, setCategory] = useState('ai-chats');
   const [manualCode, setManualCode] = useState('');
   const [aiInstruction, setAiInstruction] = useState('');
+  const [activePane, setActivePane] = useState<'preview' | 'prompt'>('preview');
+  const [hasCustomName, setHasCustomName] = useState(false);
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
   const [isTested, setIsTested] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [streamingLogs, setStreamingLogs] = useState('');
@@ -105,10 +40,10 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
   }, []);
 
   useEffect(() => {
-    if (!manualCode) return;
+    if (!manualCode || hasCustomName) return;
     const match = manualCode.match(/(?:const|function)\s+([A-Z][a-zA-Z0-9]+)/);
     if (match && match[1] && match[1] !== name) setName(match[1]);
-  }, [manualCode]);
+  }, [manualCode, hasCustomName, name]);
 
   useEffect(() => {
     if (terminalEndRef.current) {
@@ -116,7 +51,52 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
     }
   }, [streamingLogs]);
 
+  const displayName = name.trim() || detectComponentName(manualCode) || 'MyComponent';
+  const detectedDependencies = useMemo(() => detectNpmDependencies(manualCode), [manualCode]);
+  const generatedPrompt = useMemo(() => buildIntegrationPrompt({
+    displayName,
+    category,
+    code: manualCode
+  }), [category, displayName, manualCode]);
+  const isReadyToPublish = Boolean(name.trim() && manualCode.trim());
+
   if (!isOpen || !mounted) return null;
+
+  const handleNameChange = (value: string) => {
+    setHasCustomName(true);
+    setName(value);
+  };
+
+  const handleCopyPrompt = async () => {
+    if (!manualCode.trim()) return;
+    await navigator.clipboard?.writeText(generatedPrompt);
+    setCopiedPrompt(true);
+    window.setTimeout(() => setCopiedPrompt(false), 1200);
+  };
+
+  const resetPublishedDraft = () => {
+    setName('');
+    setManualCode('');
+    setAiInstruction('');
+    setStreamingLogs('');
+    setIsTested(false);
+    setHasCustomName(false);
+    setActivePane('preview');
+  };
+
+  const handlePublish = () => {
+    if (!isReadyToPublish) return;
+    addComponent({
+      name: name.trim(),
+      category,
+      code: manualCode,
+      prompt: generatedPrompt,
+      dependencies: detectedDependencies
+    });
+    onSuccess?.();
+    resetPublishedDraft();
+    onClose();
+  };
 
   const handleTest = async () => {
     if (!aiInstruction.trim()) return;
@@ -166,8 +146,9 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
           setIsTested(true);
         }
       }
-    } catch (err: any) {
-      alert(`Error: ${err.message}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      alert(`Error: ${message}`);
     } finally {
       setIsGenerating(false);
     }
@@ -186,22 +167,51 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
 
         <div className="premium-modal-body">
           <div className="preview-pane">
-            <div className="preview-viewport">
-              <iframe srcDoc={generatePreviewHtml(manualCode, name)} className="preview-iframe" />
-              {isGenerating && (
-                <div className="terminal-overlay">
-                  <div className="terminal-window">
-                    <pre ref={terminalEndRef} className="terminal-content">{streamingLogs}</pre>
-                  </div>
-                </div>
-              )}
+            <div className="pane-header">
+              <div className="header-tabs">
+                <button className={`tab-btn ${activePane === 'preview' ? 'active' : ''}`} onClick={() => setActivePane('preview')}>
+                  Preview
+                </button>
+                <button className={`tab-btn ${activePane === 'prompt' ? 'active' : ''}`} onClick={() => setActivePane('prompt')}>
+                  Prompt
+                </button>
+              </div>
+              <button className="copy-prompt-btn" onClick={handleCopyPrompt} disabled={!manualCode.trim()}>
+                {copiedPrompt ? <Check size={14} /> : <Copy size={14} />}
+                {copiedPrompt ? 'Copied' : 'Copy Prompt'}
+              </button>
             </div>
+
+            {activePane === 'preview' ? (
+              <div className="preview-viewport">
+                <iframe
+                  srcDoc={createPreviewDocument(manualCode, displayName)}
+                  className="preview-iframe"
+                  sandbox="allow-scripts"
+                  title="Component preview"
+                />
+                {isGenerating && (
+                  <div className="terminal-overlay">
+                    <div className="terminal-window">
+                      <pre ref={terminalEndRef} className="terminal-content">{streamingLogs}</pre>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="prompt-viewport">
+                <textarea className="generated-prompt-textarea" readOnly value={generatedPrompt} />
+              </div>
+            )}
           </div>
 
           <div className="control-pane">
             <div className="editor-section">
               <div className="section-header">
-                <span className="editor-status">TSX BULLETPROOF v8</span>
+                <span className="editor-status">{isTested ? 'PROMPT READY' : 'TSX BULLETPROOF v8'}</span>
+                <span className="dependency-status">
+                  {detectedDependencies.length > 0 ? detectedDependencies.join(', ') : 'No npm deps detected'}
+                </span>
               </div>
               <textarea value={manualCode} onChange={(e) => setManualCode(e.target.value)} className="code-editor-textarea" spellCheck={false} placeholder="Paste or generate code..." />
             </div>
@@ -210,13 +220,14 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
               <div className="input-grid">
                 <div className="input-field">
                   <label>Name</label>
-                  <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Component Name" />
+                  <input type="text" value={name} onChange={(e) => handleNameChange(e.target.value)} placeholder="Display name" />
                 </div>
                 <div className="input-field">
                   <label>Category</label>
                   <select value={category} onChange={(e) => setCategory(e.target.value)}>
-                    <option value="hero">Hero</option>
-                    <option value="ai-chats">AI Chats</option>
+                    {componentCategories.map((option) => (
+                      <option key={option.id} value={option.id}>{option.label}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -230,8 +241,8 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
                 </div>
               </div>
 
-              <button onClick={() => { addComponent({ name, code: manualCode }); onClose(); }} className="publish-action-btn">
-                PUBLISH
+              <button onClick={handlePublish} disabled={!isReadyToPublish} className="publish-action-btn">
+                PUBLISH TO LIBRARY
               </button>
             </div>
           </div>
