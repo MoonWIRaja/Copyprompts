@@ -118,7 +118,7 @@ async function main(): Promise<void> {
     const initialized = isInitialized(root);
     const name = await promptFor(flags, "name", initialized ? "Your display name?" : "Owner display name?");
     const codename = await promptFor(flags, "codename", initialized ? "Your codename?" : "Owner codename?");
-    const className = await promptFor(flags, "class", "RPG coding class? (try: Necro Summoner, Stack Paladin, Prompt Alchemist)", "Prompt Alchemist");
+    const className = await promptFor(flags, "class", "RPG coding class? (try: Necro Summoner, Stack Paladin, Prompts Summoner)", "Prompts Summoner");
     const conversationLanguage = await promptFor(flags, "conversation-language", "Conversation language?", "Melayu");
     const codingLanguage = await promptFor(flags, "coding-language", "Coding/adventure language?", "English");
     const mode = initialized ? undefined : await promptFor(flags, "mode", "Project mode (solo/team)?", "solo");

@@ -36,7 +36,7 @@ const VALID_JOIN_MODES: JoinMode[] = ["owner-approved", "open", "invite"];
 const VALID_MODES: ProjectMode[] = ["solo", "team"];
 const DEFAULT_CONVERSATION_LANGUAGE = "Melayu";
 const DEFAULT_CODING_LANGUAGE = "English";
-const DEFAULT_RPG_CLASS = "Prompt Alchemist";
+const DEFAULT_RPG_CLASS = "Prompts Summoner";
 const MEMORY_FILE = "MYNEY.md";
 const STATE_BLOCK = /```json myney-state\n([\s\S]*?)\n```/;
 

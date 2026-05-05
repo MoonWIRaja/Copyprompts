@@ -267,6 +267,11 @@ export const INSTALLED_SKILLS: InstalledSkill[] = [
     purpose: "Lists and explains MYney, Lumina, Nara, Kaizen, Riven, Vega, and Echo."
   },
   {
+    name: "Auto-Sync Ritual",
+    trigger: "/myney-autosync",
+    purpose: "Automates Quest -> Build -> Memory -> GitHub Push flow (All changes)."
+  },
+  {
     name: "Integrity Check",
     trigger: "/myney-check",
     purpose: "Validates the single-file state, classes, skills, members, pairs, and todos."
@@ -391,6 +396,11 @@ export const COMMANDS: CommandProtocol[] = [
     command: "/myney-todo",
     file: "todo.md",
     purpose: "Add, list, and complete persistent MemoryCore todos."
+  },
+  {
+    command: "/myney-autosync",
+    file: "autosync.md",
+    purpose: "Automate Quest -> Build -> Memory -> GitHub Push flow (All changes)."
   },
   {
     command: "/myney-check",

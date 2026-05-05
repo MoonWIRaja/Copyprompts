@@ -19,6 +19,7 @@ entries live here.
 - `/myney-skills` - List installed MYney skills and RPG coding class options.
 - `/myney-memory` - Log or list conversation and memory-change journal entries.
 - `/myney-todo` - Add, list, and complete persistent MemoryCore todos.
+- `/myney-autosync` - Automate Quest -> Build -> Memory -> GitHub Push flow (All changes).
 - `/myney-check` - Validate required MemoryCore files and consistency.
 
 ## Language Protocol
@@ -49,7 +50,7 @@ entries live here.
 - **Pair Sync** (`/myney-pair`) - Maintains cross-consistent pair state between two members.
 - **Invite Gate** (`/myney-invite`) - Lets the owner control team activation with invite codes.
 - **Agent Protocols** (`/myney-agent`) - Lists and explains MYney, Lumina, Nara, Kaizen, Riven, Vega, and Echo.
-- **Auto-Sync Ritual** (`/myney-autosync`) - Automates Quest -> Build -> Memory -> GitHub Push flow (No exceptions: big or small).
+- **Auto-Sync Ritual** (`/myney-autosync`) - Automates Quest -> Build -> Memory -> GitHub Push flow (All changes).
 - **Integrity Check** (`/myney-check`) - Validates the single-file state, classes, skills, members, pairs, and todos.
 
 ## RPG Coding Classes
@@ -114,8 +115,8 @@ When a user types a `/myney-*` command:
       "lastHandoff": "Marketplace UI refined with CreateModal and mock data.",
       "lastBlocker": null,
       "firstOnboarded": "2026-05-04T12:11:30+08:00",
-      "lastSession": "2026-05-04T16:41:00+08:00",
-      "sessionsCount": 3,
+      "lastSession": "2026-05-05T08:59:34.341+08:00",
+      "sessionsCount": 8,
       "joinedVia": "solo",
       "languagePreferences": {
         "conversationLanguage": "Malay/English",
@@ -123,7 +124,7 @@ When a user types a `/myney-*` command:
       },
       "personalNotes": [],
       "createdAt": "2026-05-04T12:11:30+08:00",
-      "updatedAt": "2026-05-04T16:41:00+08:00"
+      "updatedAt": "2026-05-05T08:59:34.341+08:00"
     }
   },
   "invites": {},
@@ -399,6 +400,27 @@ When a user types a `/myney-*` command:
       "actor": "MYney",
       "kind": "cleanup",
       "summary": "Cleansed .env by deprecating the REST API key and explicitly setting the model to 'auto'. Synchronized the root .env with apps/web/.env."
+    },
+    {
+      "id": "mem-morx6mnx-5a8d",
+      "at": "2026-05-05T08:58:29.566+08:00",
+      "actor": "moon",
+      "kind": "setup",
+      "summary": "Returning member activated. Conversation language: Malay/English. Coding/adventure language: TypeScript. Class: Prompts Summoner."
+    },
+    {
+      "id": "mem-morx7huk-6174",
+      "at": "2026-05-05T08:59:09.980+08:00",
+      "actor": "moon",
+      "kind": "setup",
+      "summary": "Returning member activated. Conversation language: Malay/English. Coding/adventure language: TypeScript. Class: Prompts Summoner."
+    },
+    {
+      "id": "mem-morx80na-1f94",
+      "at": "2026-05-05T08:59:34.343+08:00",
+      "actor": "moon",
+      "kind": "setup",
+      "summary": "Returning member activated. Conversation language: Malay/English. Coding/adventure language: TypeScript. Class: Prompts Summoner."
     }
   ],
   "todos": [],
@@ -649,6 +671,6 @@ When a user types a `/myney-*` command:
     }
   ],
   "createdAt": "2026-04-27T15:39:27.958+08:00",
-  "updatedAt": "2026-05-04T12:13:49.600+08:00"
+  "updatedAt": "2026-05-05T08:59:34.343+08:00"
 }
 ```
