@@ -3,21 +3,25 @@ import React from 'react';
 import { Bookmark, Heart, Copy } from 'lucide-react';
 import styles from '../app/page.module.css';
 import { ComponentData } from '../lib/data';
-import { createPreviewDocument } from '../lib/component-utils';
+import { createPreviewDocument } from '../lib/preview-compiler';
 
 interface ComponentCardProps {
   component: ComponentData;
 }
 
 export const ComponentCard = ({ component }: ComponentCardProps) => {
+  const previewDocument = React.useMemo(() => (
+    component.code ? createPreviewDocument(component.code, component.name) : ''
+  ), [component.code, component.name]);
+
   return (
     <li className={styles.componentCard}>
       <div className={styles.previewContainer}>
         {component.code ? (
           <iframe
-            srcDoc={createPreviewDocument(component.code, component.name)}
+            srcDoc={previewDocument}
             className={styles.previewFrame}
-            sandbox="allow-scripts"
+            sandbox="allow-scripts allow-same-origin"
             title={`${component.name} preview`}
           />
         ) : (

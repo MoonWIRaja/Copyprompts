@@ -50,6 +50,7 @@
       "name": "web",
       "version": "0.1.0",
       "dependencies": {
+        "@babel/standalone": "^7.29.3",
         "@repo/ui": "*",
         "lucide-react": "^1.14.0",
         "next": "16.2.0",
@@ -120,6 +121,8 @@
     },
   },
   "packages": {
+    "@babel/standalone": ["@babel/standalone@7.29.3", "", {}, "sha512-MRg274T8RTFX8hfkeP+plq6SS8pGuN65dGL2R6YsPG58UDYi3iAlBWwFC/v0ewXZbbMVdGS70r+Vtt3BHHGZxA=="],
+
     "@borewit/text-codec": ["@borewit/text-codec@0.2.2", "", {}, "sha512-DDaRehssg1aNrH4+2hnj1B7vnUGEjU6OIlyRdkMd0aUdIUvKXrJfXsy8LVtXAy7DRvYVluWbMspsRhz2lcW0mQ=="],
 
     "@drizzle-team/brocli": ["@drizzle-team/brocli@0.10.2", "", {}, "sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w=="],

@@ -8,9 +8,9 @@ import {
   analyzeComponentCode,
   buildIntegrationPrompt,
   componentCategories,
-  createPreviewDocument,
   detectComponentName
 } from '../lib/component-utils';
+import { createPreviewDocument } from '../lib/preview-compiler';
 import './create-modal.css';
 
 interface CreateModalProps {
@@ -31,12 +31,31 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
   const [isTested, setIsTested] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [streamingLogs, setStreamingLogs] = useState('');
+  const [previewCode, setPreviewCode] = useState('');
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [isTypingCode, setIsTypingCode] = useState(false);
   const terminalEndRef = useRef<HTMLPreElement>(null);
+  const previewTimerRef = useRef<number>(0);
+  const previewFailSafeRef = useRef<number>(0);
+  const typingTimerRef = useRef<number>(0);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    return () => setMounted(false);
+    const handlePreviewReady = (event: MessageEvent) => {
+      if (event.data?.type !== 'copyprompts-preview-ready') return;
+      window.clearTimeout(previewFailSafeRef.current);
+      setIsPreviewLoading(false);
+    };
+
+    window.addEventListener('message', handlePreviewReady);
+    return () => {
+      window.removeEventListener('message', handlePreviewReady);
+      window.clearTimeout(previewTimerRef.current);
+      window.clearTimeout(previewFailSafeRef.current);
+      window.clearTimeout(typingTimerRef.current);
+      setMounted(false);
+    };
   }, []);
 
   useEffect(() => {
@@ -51,6 +70,23 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
     }
   }, [streamingLogs]);
 
+  useEffect(() => {
+    window.clearTimeout(previewTimerRef.current);
+    window.clearTimeout(previewFailSafeRef.current);
+    if (!manualCode.trim()) {
+      setPreviewCode('');
+      setIsPreviewLoading(false);
+      return;
+    }
+    setIsPreviewLoading(true);
+    previewTimerRef.current = window.setTimeout(() => {
+      setPreviewCode(manualCode);
+      previewFailSafeRef.current = window.setTimeout(() => {
+        setIsPreviewLoading(false);
+      }, 8000);
+    }, 800);
+  }, [manualCode]);
+
   const componentAnalysis = useMemo(() => analyzeComponentCode(manualCode), [manualCode]);
   const displayName = name.trim() || componentAnalysis.primaryName || detectComponentName(manualCode) || 'MyComponent';
   const detectedDependencies = componentAnalysis.dependencies;
@@ -59,6 +95,9 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
     category,
     code: manualCode
   }), [category, displayName, manualCode]);
+  const previewDocument = useMemo(() => (
+    previewCode.trim() ? createPreviewDocument(previewCode, displayName) : ''
+  ), [displayName, previewCode]);
   const isReadyToPublish = Boolean(name.trim() && manualCode.trim());
 
   if (!isOpen || !mounted) return null;
@@ -66,6 +105,13 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
   const handleNameChange = (value: string) => {
     setHasCustomName(true);
     setName(value);
+  };
+
+  const handleCodeChange = (value: string) => {
+    setManualCode(value);
+    setIsTypingCode(true);
+    window.clearTimeout(typingTimerRef.current);
+    typingTimerRef.current = window.setTimeout(() => setIsTypingCode(false), 1200);
   };
 
   const handleCopyPrompt = async () => {
@@ -186,15 +232,48 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
             {activePane === 'preview' ? (
               <div className="preview-viewport">
                 <iframe
-                  srcDoc={createPreviewDocument(manualCode, displayName)}
+                  srcDoc={previewDocument}
                   className="preview-iframe"
-                  sandbox="allow-scripts"
+                  sandbox="allow-scripts allow-same-origin"
                   title="Component preview"
+                  onLoad={() => {
+                    if (!previewCode.trim()) setIsPreviewLoading(false);
+                  }}
                 />
+
+                {!manualCode.trim() && (
+                  <div className="preview-empty-state">
+                    <div className="preview-empty-loader">
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                    </div>
+                    <div className="preview-empty-title">Waiting for code</div>
+                    <div className="preview-empty-copy">Paste TSX to start rendering a live preview.</div>
+                  </div>
+                )}
+
+                {isPreviewLoading && !isGenerating && (
+                  <div className="preview-loading-overlay">
+                    <div className="preview-loading-spinner" />
+                    <div className="preview-loading-text">Rendering...</div>
+                  </div>
+                )}
+
                 {isGenerating && (
-                  <div className="terminal-overlay">
-                    <div className="terminal-window">
-                      <pre ref={terminalEndRef} className="terminal-content">{streamingLogs}</pre>
+                  <div className="summoning-overlay">
+                    <div className="summoning-circle">
+                      <div className="summoning-spinner"></div>
+                    </div>
+                    <div className="summoning-text">Summoning Component...</div>
+                    <div className="terminal-window" style={{ width: '80%', marginTop: '20px' }}>
+                       <div className="terminal-header">
+                        <div className="terminal-dots">
+                          <span></span><span></span><span></span>
+                        </div>
+                        <div className="terminal-title">GEMINI_BRIDGE_LOGS</div>
+                      </div>
+                      <pre ref={terminalEndRef} className="terminal-content" style={{ height: '120px' }}>{streamingLogs}</pre>
                     </div>
                   </div>
                 )}
@@ -214,7 +293,7 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
                   {detectedDependencies.length > 0 ? detectedDependencies.join(', ') : 'No npm deps detected'}
                 </span>
               </div>
-              <textarea value={manualCode} onChange={(e) => setManualCode(e.target.value)} className="code-editor-textarea" spellCheck={false} placeholder="Paste or generate code..." />
+              <textarea value={manualCode} onChange={(e) => handleCodeChange(e.target.value)} className={`code-editor-textarea${isTypingCode ? ' is-typing' : ''}`} spellCheck={false} placeholder="Paste or generate code..." />
             </div>
 
             <div className="config-section">
