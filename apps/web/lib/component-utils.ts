@@ -54,9 +54,84 @@ export function toPascalCase(input: string): string {
   return value || 'GeneratedComponent';
 }
 
+export type ComponentAnalysis = {
+  primaryName: string | null;
+  renderableNames: string[];
+  exportedNames: string[];
+  dependencies: string[];
+  previewStrategy: 'explicit-demo' | 'compound-input' | 'auto-wrapper' | 'waiting';
+  warnings: string[];
+};
+
+function uniqueOrdered(values: string[]): string[] {
+  return [...new Set(values.filter(Boolean))];
+}
+
+function collectRenderableNames(code: string): string[] {
+  const names: string[] = [];
+  const patterns = [
+    /(?:export\s+)?function\s+([A-Z][a-zA-Z0-9_]*)\s*\(/g,
+    /(?:export\s+)?class\s+([A-Z][a-zA-Z0-9_]*)\s+extends/g,
+    /(?:export\s+)?const\s+([A-Z][a-zA-Z0-9_]*)\s*=\s*(?:React\.)?(?:forwardRef|memo)\b/g,
+    /(?:export\s+)?const\s+([A-Z][a-zA-Z0-9_]*)\s*=\s*(?:\([^)]*\)|[a-zA-Z0-9_]+)\s*=>/g
+  ];
+
+  for (const pattern of patterns) {
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(code)) !== null) {
+      const name = match[1];
+      if (!name || /Context$|Provider$|Consumer$/.test(name)) continue;
+      names.push(name);
+    }
+  }
+
+  return uniqueOrdered(names);
+}
+
+function collectExportedNames(code: string): string[] {
+  const names: string[] = [];
+  const namedExportPattern = /export\s+\{([^}]+)\}/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = namedExportPattern.exec(code)) !== null) {
+    const exportBody = match[1] || '';
+    for (const item of exportBody.split(',')) {
+      const localName = item.trim().split(/\s+as\s+/)[0]?.trim();
+      if (localName && /^[A-Z][a-zA-Z0-9_]*$/.test(localName)) {
+        names.push(localName);
+      }
+    }
+  }
+
+  const directExportPattern = /export\s+(?:default\s+)?(?:function|class|const)\s+([A-Z][a-zA-Z0-9_]*)/g;
+  while ((match = directExportPattern.exec(code)) !== null) {
+    if (match[1]) names.push(match[1]);
+  }
+
+  return uniqueOrdered(names);
+}
+
+function pickPrimaryComponentName(renderableNames: string[], exportedNames: string[]): string | null {
+  const nonDemoNames = renderableNames.filter((name) => !/Demo$|Example$/.test(name));
+  const exportedRenderableNames = exportedNames.filter((name) => nonDemoNames.includes(name));
+  const candidates = exportedRenderableNames.length > 0 ? exportedRenderableNames : nonDemoNames;
+
+  if (candidates.length === 0) return null;
+
+  const prefixRoot = candidates
+    .filter((name) => candidates.some((other) => other !== name && other.startsWith(name)))
+    .sort((a, b) => a.length - b.length)[0];
+
+  return prefixRoot || candidates[0] || null;
+}
+
+function findNameByPattern(names: string[], pattern: RegExp): string | null {
+  return names.find((name) => pattern.test(name)) || null;
+}
+
 export function detectComponentName(code: string): string | null {
-  const match = code.match(/(?:export\s+)?(?:function|const|class)\s+([A-Z][a-zA-Z0-9_]*)/);
-  return match?.[1] || null;
+  const analysis = analyzeComponentCode(code);
+  return analysis.primaryName;
 }
 
 export function detectNpmDependencies(code: string): string[] {
@@ -77,6 +152,59 @@ export function detectNpmDependencies(code: string): string[] {
   }
 
   return [...dependencies].sort();
+}
+
+export function analyzeComponentCode(code: string): ComponentAnalysis {
+  const renderableNames = collectRenderableNames(code);
+  const exportedNames = collectExportedNames(code);
+  const primaryName = pickPrimaryComponentName(renderableNames, exportedNames);
+  const dependencies = detectNpmDependencies(code);
+  const hasExplicitDemo = renderableNames.some((name) => /Demo$|Example$/.test(name));
+  const hasCompoundInputParts = Boolean(
+    primaryName &&
+    findNameByPattern(renderableNames, /(?:TextArea|Textarea)$/) &&
+    findNameByPattern(renderableNames, /(?:Submit|Send|Button)$/)
+  );
+  const localImports = code.match(/from\s+['"]@\/[^'"]+['"]/g) || [];
+  const warnings: string[] = [];
+
+  if (!code.trim()) {
+    return {
+      primaryName: null,
+      renderableNames: [],
+      exportedNames: [],
+      dependencies: [],
+      previewStrategy: 'waiting',
+      warnings: []
+    };
+  }
+
+  if (!primaryName) {
+    warnings.push('No renderable React component detected yet.');
+  }
+
+  if (!hasExplicitDemo && primaryName) {
+    warnings.push('No demo component found. Preview will auto-generate a visible demo.');
+  }
+
+  if (localImports.length > 0) {
+    warnings.push('Local shadcn/hooks imports are mocked in preview and kept in the final prompt.');
+  }
+
+  return {
+    primaryName,
+    renderableNames,
+    exportedNames,
+    dependencies,
+    previewStrategy: hasExplicitDemo
+      ? 'explicit-demo'
+      : hasCompoundInputParts
+        ? 'compound-input'
+        : primaryName
+          ? 'auto-wrapper'
+          : 'waiting',
+    warnings
+  };
 }
 
 function detectLucideIconMocks(code: string): string {
@@ -109,14 +237,74 @@ function stripModuleSyntax(code: string): string {
     .replace(/export\s+/g, '');
 }
 
+function stripPreviewOnlyTypeSyntax(code: string): string {
+  return code
+    .replace(/interface\s+[A-Z][a-zA-Z0-9_]*(?:\s+extends[^{]+)?\s*\{[\s\S]*?\n\}/g, '')
+    .replace(/type\s+[A-Z][a-zA-Z0-9_]*\s*=\s*[\s\S]*?;/g, '')
+    .replace(/([a-zA-Z0-9_.$]+)<[^<>\n]+>\s*\(/g, '$1(');
+}
+
+function buildAutoDemoSource(analysis: ComponentAnalysis): string {
+  const rootName = analysis.primaryName;
+  if (!rootName) return '';
+
+  const textAreaName = findNameByPattern(analysis.renderableNames, /(?:TextArea|Textarea)$/);
+  const submitName = findNameByPattern(analysis.renderableNames, /(?:Submit|Send|Button)$/);
+  const hasCompoundInputParts = Boolean(textAreaName && submitName);
+
+  return `
+          const __CopypromptsAutoGeneratedDemo = () => {
+            const RootComponent = safeEvalComponent(${JSON.stringify(rootName)});
+            if (!RootComponent) return null;
+
+            if (${JSON.stringify(hasCompoundInputParts)}) {
+              const TextAreaComponent = safeEvalComponent(${JSON.stringify(textAreaName)});
+              const SubmitComponent = safeEvalComponent(${JSON.stringify(submitName)});
+              const [value, setValue] = useState('Preview message');
+              const [loading, setLoading] = useState(false);
+              const handleSubmit = () => {
+                setLoading(true);
+                window.setTimeout(() => setLoading(false), 800);
+              };
+
+              if (TextAreaComponent && SubmitComponent) {
+                return (
+                  <div className="w-full max-w-[420px]">
+                    <RootComponent
+                      value={value}
+                      onChange={(event) => setValue(event.target.value)}
+                      onSubmit={handleSubmit}
+                      loading={loading}
+                      onStop={() => setLoading(false)}
+                    >
+                      <TextAreaComponent placeholder="Type a message..." />
+                      <SubmitComponent />
+                    </RootComponent>
+                  </div>
+                );
+              }
+            }
+
+            return (
+              <div className="w-full max-w-[420px]">
+                <RootComponent>
+                  <div className="rounded-lg border border-dashed border-zinc-300 p-4 text-center text-sm text-zinc-500">
+                    Auto preview content
+                  </div>
+                </RootComponent>
+              </div>
+            );
+          };
+`;
+}
+
 export function createPreviewDocument(code: string, displayName: string): string {
-  const detectedName = detectComponentName(code);
+  const analysis = analyzeComponentCode(code);
+  const detectedName = analysis.primaryName;
   const safeName = (detectedName || toPascalCase(displayName)).replace(/[^a-zA-Z0-9_]/g, '') || 'GeneratedComponent';
-  const detectedTypes = (code.match(/(?:interface|type)\s+([A-Z][a-zA-Z0-9]+)/g) || [])
-    .map((typeName) => typeName.split(/\s+/)[1]);
-  const typeMocks = detectedTypes.map((typeName) => `const ${typeName} = {};`).join('\n');
   const iconMocks = detectLucideIconMocks(code);
-  const cleanCode = stripModuleSyntax(code);
+  const cleanCode = stripPreviewOnlyTypeSyntax(stripModuleSyntax(code));
+  const autoDemoSource = buildAutoDemoSource(analysis);
 
   return `
     <!DOCTYPE html>
@@ -135,7 +323,7 @@ export function createPreviewDocument(code: string, displayName: string): string
       </head>
       <body>
         <div id="root"></div>
-        <script type="text/babel" data-presets="react,typescript">
+        <script type="text/babel" data-presets="typescript,react">
           const { useState, useEffect, useRef, useMemo, useCallback, useLayoutEffect, createContext, useContext, forwardRef } = React;
           const cn = (...classes) => classes.flat(Infinity).filter(Boolean).join(' ');
           const toast = (message) => console.log('Toast:', message);
@@ -152,22 +340,30 @@ export function createPreviewDocument(code: string, displayName: string): string
             return textareaRef;
           };
           ${iconMocks}
-          ${typeMocks}
 
           ${cleanCode}
+
+          const safeEvalComponent = (name) => {
+            try {
+              const component = eval(name);
+              return typeof component === 'function' ? component : null;
+            } catch (error) {
+              return null;
+            }
+          };
+
+          ${autoDemoSource}
 
           const App = () => {
             try {
               let ComponentToRender = null;
-              const searchOrder = ['ChatInputDemo', 'Demo', 'Example', '${safeName}', 'App'];
+              const searchOrder = ['${safeName}Demo', 'ChatInputDemo', 'Demo', 'Example', '__CopypromptsAutoGeneratedDemo', '${safeName}', 'App'];
               for (const name of searchOrder) {
-                try {
-                  const component = eval(name);
-                  if (typeof component === 'function') {
-                    ComponentToRender = component;
-                    break;
-                  }
-                } catch (error) {}
+                const component = safeEvalComponent(name);
+                if (component) {
+                  ComponentToRender = component;
+                  break;
+                }
               }
               if (!ComponentToRender) return <div className="rounded-lg bg-amber-50 p-4 text-sm text-amber-700">Waiting for a React component...</div>;
               return <ComponentToRender />;

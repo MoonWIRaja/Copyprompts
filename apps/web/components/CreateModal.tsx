@@ -5,11 +5,11 @@ import {
 } from 'lucide-react';
 import type { CreateComponentInput } from '../lib/data';
 import {
+  analyzeComponentCode,
   buildIntegrationPrompt,
   componentCategories,
   createPreviewDocument,
-  detectComponentName,
-  detectNpmDependencies
+  detectComponentName
 } from '../lib/component-utils';
 import './create-modal.css';
 
@@ -51,8 +51,9 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
     }
   }, [streamingLogs]);
 
-  const displayName = name.trim() || detectComponentName(manualCode) || 'MyComponent';
-  const detectedDependencies = useMemo(() => detectNpmDependencies(manualCode), [manualCode]);
+  const componentAnalysis = useMemo(() => analyzeComponentCode(manualCode), [manualCode]);
+  const displayName = name.trim() || componentAnalysis.primaryName || detectComponentName(manualCode) || 'MyComponent';
+  const detectedDependencies = componentAnalysis.dependencies;
   const generatedPrompt = useMemo(() => buildIntegrationPrompt({
     displayName,
     category,
@@ -240,6 +241,22 @@ export const CreateModal = ({ isOpen, onClose, onSuccess, addComponent }: Create
                   </button>
                 </div>
               </div>
+
+              {manualCode.trim() && (
+                <div className="analysis-panel">
+                  <div className="analysis-row">
+                    <span>Detected</span>
+                    <strong>{componentAnalysis.primaryName || 'No component yet'}</strong>
+                  </div>
+                  <div className="analysis-row">
+                    <span>Preview mode</span>
+                    <strong>{componentAnalysis.previewStrategy.replace('-', ' ')}</strong>
+                  </div>
+                  {componentAnalysis.warnings.map((warning) => (
+                    <p className="analysis-warning" key={warning}>{warning}</p>
+                  ))}
+                </div>
+              )}
 
               <button onClick={handlePublish} disabled={!isReadyToPublish} className="publish-action-btn">
                 PUBLISH TO LIBRARY
